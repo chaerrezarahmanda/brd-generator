@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BRD Generator — Latihan</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#12171f;
+  --paper:#f7f8f9;
+  --panel:#ffffff;
+  --line:#dfe3e8;
+  --muted:#69737f;
+  --steel:#2b4a6f;
+  --signal:#c2610f;      /* unanswered / ambiguity */
+  --fail:#a3232b;
+  --pass:#1f6b47;
+  --shadow:0 1px 2px rgba(18,23,31,.05),0 8px 24px rgba(18,23,31,.04);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:14px;line-height:1.5}
+header{background:var(--ink);color:#fff;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+header h1{font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:700;margin:0;letter-spacing:-.2px}
+header p{margin:3px 0 0;color:#9aa5b1;font-size:12px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+button{font-family:Inter,sans-serif;font-size:13px;font-weight:500;padding:9px 14px;border-radius:6px;border:1px solid transparent;cursor:pointer;transition:.15s}
+.btn-primary{background:#fff;color:var(--ink)}
+.btn-primary:hover{background:#e8ebee}
+.btn-ghost{background:transparent;color:#cfd6dd;border-color:#3a424d}
+.btn-ghost:hover{border-color:#6b7684;color:#fff}
+button:focus-visible{outline:2px solid #7aa7d9;outline-offset:2px}
+
+.wrap{display:grid;grid-template-columns:1fr 360px;gap:24px;padding:24px 28px;max-width:1500px;margin:0 auto;align-items:start}
+@media(max-width:1050px){.wrap{grid-template-columns:1fr}}
+
+section.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-bottom:18px;box-shadow:var(--shadow)}
+.card>h2{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;margin:0;padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;letter-spacing:.2px}
+.tag{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;background:#eef1f4;color:var(--muted);padding:3px 6px;border-radius:3px;letter-spacing:.5px}
+.tag.biz{background:#fdf1e3;color:var(--signal)}
+.tag.qa{background:#e7f0ec;color:var(--pass)}
+.card-body{padding:16px 18px}
+.hint{color:var(--muted);font-size:12px;margin:-4px 0 14px}
+
+.field{margin-bottom:14px}
+.field label{display:block;font-weight:500;font-size:12.5px;margin-bottom:5px}
+.field .why{color:var(--muted);font-size:11.5px;font-weight:400;margin-left:6px}
+input[type=text],input[type=number],input[type=date],select,textarea{
+  width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:5px;font-family:Inter,sans-serif;font-size:13px;background:#fff;color:var(--ink)}
+textarea{resize:vertical;min-height:60px;font-family:'IBM Plex Mono',monospace;font-size:12px}
+input:focus,select:focus,textarea:focus{outline:2px solid #7aa7d9;outline-offset:0;border-color:#7aa7d9}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:700px){.grid2,.grid3{grid-template-columns:1fr}}
+
+/* signature: ambiguity flag */
+.critical{border-left:3px solid var(--signal);padding-left:12px;background:#fffaf3;border-radius:0 5px 5px 0;padding-top:10px;padding-bottom:2px;margin-bottom:14px}
+.critical .flag{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--signal);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;display:block}
+.precedent{font-size:11.5px;color:#8a5a20;background:#fdf1e3;border-radius:4px;padding:7px 9px;margin:8px 0 12px}
+
+table.rows{width:100%;border-collapse:collapse;font-size:12.5px}
+table.rows th{text-align:left;font-weight:600;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:6px 8px;border-bottom:1px solid var(--line)}
+table.rows td{padding:4px;border-bottom:1px solid #eef1f4;vertical-align:top}
+table.rows input,table.rows select,table.rows textarea{padding:6px 8px;font-size:12.5px}
+.rm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:4px 8px;line-height:1}
+.rm:hover{color:var(--fail)}
+.add{background:#eef1f4;color:var(--steel);border:1px dashed #c3cbd4;width:100%;margin-top:10px}
+.add:hover{background:#e4e9ee}
+
+/* right rail */
+.rail{position:sticky;top:24px}
+.ledger{background:var(--ink);color:#fff;border-radius:8px;padding:18px;margin-bottom:16px}
+.ledger h3{font-family:'Space Grotesk',sans-serif;font-size:13px;margin:0 0 4px;letter-spacing:.2px}
+.ledger .sub{color:#8f9aa6;font-size:11.5px;margin:0 0 14px;line-height:1.45}
+.score{font-family:'Space Grotesk',sans-serif;font-size:44px;font-weight:700;line-height:1;letter-spacing:-1px}
+.score small{font-size:13px;font-weight:400;color:#8f9aa6;letter-spacing:0}
+.verdict{margin-top:12px;padding:9px 12px;border-radius:5px;font-weight:600;font-size:12.5px;text-align:center;font-family:'IBM Plex Mono',monospace;letter-spacing:.5px}
+.v-ready{background:#1f6b47;color:#fff}
+.v-block{background:#a3232b;color:#fff}
+.checks{list-style:none;margin:14px 0 0;padding:0}
+.checks li{display:flex;gap:9px;padding:7px 0;border-top:1px solid #262d36;font-size:12px;line-height:1.4;color:#c8cfd6}
+.checks .mark{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;padding:2px 5px;border-radius:3px;height:fit-content;flex-shrink:0}
+.m-pass{background:#1f6b47;color:#fff}
+.m-fail{background:#a3232b;color:#fff}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px 18px;box-shadow:var(--shadow)}
+.panel h3{font-family:'Space Grotesk',sans-serif;font-size:13px;margin:0 0 8px}
+.panel p{font-size:12px;color:var(--muted);margin:0 0 12px;line-height:1.5}
+.panel button{width:100%;margin-bottom:8px}
+.btn-solid{background:var(--steel);color:#fff}
+.btn-solid:hover{background:#20395a}
+.btn-line{background:#fff;color:var(--ink);border-color:var(--line)}
+.btn-line:hover{background:#f1f3f5}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:6px;font-size:13px;transition:.25s;z-index:99;box-shadow:var(--shadow)}
+.toast.on{transform:translateX(-50%) translateY(0)}
+
+/* preview */
+#preview{display:none;background:#fff;padding:40px;max-width:900px;margin:0 auto;font-family:Inter,sans-serif}
+#preview h1{font-size:24px;font-family:'Space Grotesk',sans-serif}
+#preview h2{font-size:17px;border-bottom:2px solid var(--ink);padding-bottom:5px;margin-top:32px;font-family:'Space Grotesk',sans-serif}
+#preview h3{font-size:14px;margin-top:20px}
+#preview table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12.5px}
+#preview th,#preview td{border:1px solid #c9ced4;padding:7px 9px;text-align:left;vertical-align:top}
+#preview th{background:#f1f3f5;font-weight:600;width:34%}
+#preview .miss{color:var(--fail);font-style:italic}
+@media print{
+  header,.wrap,.toast{display:none!important}
+  #preview{display:block!important;padding:0;box-shadow:none}
+  body{background:#fff}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>BRD Generator — Partner Integration</h1>
+    <p>Versi latihan · data disamarkan · struktur mengikuti Partnership Project v2.2</p>
+  </div>
+  <div class="actions">
+    <button class="btn-ghost" id="loadCalosa">Muat kasus latihan</button>
+    <button class="btn-ghost" id="clearAll">Kosongkan</button>
+    <button class="btn-primary" id="toLark">Salin untuk Lark</button>
+    <button class="btn-primary" id="toPdf">Simpan PDF</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <main>
+
+    <!-- 1. HEADER -->
+    <section class="card">
+      <h2>Identitas Partner <span class="tag biz">Business</span></h2>
+      <div class="card-body">
+        <div class="grid2">
+          <div class="field"><label>Partner name</label><input type="text" id="partnerName"></div>
+          <div class="field"><label>Insurance provider</label><input type="text" id="provider"></div>
+          <div class="field"><label>Product name</label><input type="text" id="productName"></div>
+          <div class="field"><label>Package name</label><input type="text" id="packageName"></div>
+          <div class="field"><label>Target release</label><input type="text" id="targetRelease" placeholder="Aug 2026"></div>
+          <div class="field"><label>Business owner</label><input type="text" id="bizOwner"></div>
+          <div class="field"><label>Product owner</label><input type="text" id="prodOwner" value="Nabilla Atelya" readonly style="background:#f1f3f5;color:var(--muted)"></div>
+        </div>
+        <div class="critical">
+          <span class="flag">Dipakai untuk capacity planning</span>
+          <div class="grid2">
+            <div class="field"><label>Expected policies / month</label><input type="number" id="volPolicy" placeholder="800"></div>
+            <div class="field"><label>Expected claims / month <span class="why">sering dikosongkan</span></label><input type="number" id="volClaim"></div>
+          </div>
+          <div class="grid2">
+            <div class="field"><label>Expected GWP / month (IDR)</label><input type="number" id="gwp"></div>
+            <div class="field"><label>Reuse config partner lain?</label>
+              <select id="reuse">
+                <option value="">— pilih —</option>
+                <option>Tidak — konfigurasi baru</option>
+                <option>Ya — sama persis dengan partner lain</option>
+                <option>Ya — sebagian (COI / EDM saja)</option>
+              </select></div>
+          </div>
+          <div class="field" id="reuseRefWrap" style="display:none"><label>Partner referensi <span class="why">sebut nama — ini yang bikin effort turun</span></label><input type="text" id="reuseRef"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. PARTNERSHIP MODEL -->
+    <section class="card">
+      <h2>Partnership model <span class="tag biz">Business</span></h2>
+      <div class="card-body">
+        <div class="field"><label>Model bisnis partner</label><input type="text" id="pmBiz"></div>
+        <div class="field"><label>Target user produk asuransi ini</label><input type="text" id="pmUser"></div>
+        <div class="field"><label>Cara produk ditawarkan ke user</label>
+          <select id="pmOffer">
+            <option value="">— pilih —</option>
+            <option>Mandatory / bundling</option>
+            <option>Opt-in saat checkout</option>
+            <option>Ditawarkan terpisah</option>
+          </select></div>
+        <div class="field"><label>Objek yang diasuransikan</label><input type="text" id="pmObject"></div>
+        <div class="field"><label>Peran PasarPolis</label><input type="text" id="pmRole" placeholder="Insurance broker"></div>
+        <div class="grid2">
+          <div class="field"><label>Kategori OJK</label>
+            <select id="ojk"><option value="">— pilih —</option><option>Property</option><option>Motor Vehicle</option><option>Cargo</option><option>Liability</option><option>Personal Accident</option><option>Personal Accident Health</option><option>Credit</option><option>Miscellaneous</option><option>Term Life</option><option>Whole Life</option></select></div>
+          <div class="field"><label>Kategori PasarPolis</label>
+            <select id="ppCat"><option value="">— pilih —</option><option>Property</option><option>Home Content</option><option>Auto</option><option>Logistics</option><option>Liability</option><option>Personal Accident</option><option>Travel</option><option>Health</option><option>Credit</option><option>Device</option><option>Life</option></select></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. POLICY SPEC -->
+    <section class="card">
+      <h2>Policy spec <span class="tag biz">Business</span></h2>
+      <div class="card-body">
+        <div class="grid2">
+          <div class="field"><label>Metode integrasi policy creation</label>
+            <select id="polApi"><option value="">— pilih —</option><option>API</option><option>SFTP</option><option>Partners Panel (upload manual)</option><option>Hybrid</option></select></div>
+          <div class="field"><label>Partner menyediakan API?</label>
+            <select id="partnerApi"><option value="">— pilih —</option><option>Ya</option><option>Tidak — pakai Partners Panel</option></select></div>
+          <div class="field"><label>Policy number digenerate oleh</label>
+            <select id="polNum"><option value="">— pilih —</option><option>PasarPolis</option><option>Provider</option><option>Partner</option></select></div>
+          <div class="field"><label>Premi (IDR)</label><input type="number" id="premium"></div>
+          <div class="field"><label>Maximum TSI (IDR)</label><input type="number" id="tsi"></div>
+          <div class="field"><label>Coverage period (hari)</label><input type="number" id="coverDays"></div>
+        </div>
+
+        <div class="critical">
+          <span class="flag">Aturan tanggal — sumber bug paling sering</span>
+          <div class="grid2">
+            <div class="field"><label>Coverage dihitung sejak</label>
+              <select id="coverStart"><option value="">— pilih —</option><option>Tanggal invoice</option><option>Tanggal policy creation</option><option>Tanggal transaksi partner</option><option>H+1 setelah policy creation</option></select></div>
+            <div class="field"><label>Coverage berakhir pada</label>
+              <select id="coverEnd"><option value="">— pilih —</option><option>Date-to-date − 1 hari, 23:59:59</option><option>Date-to-date, 23:59:59</option><option>Akhir bulan</option></select></div>
+          </div>
+          <div class="field"><label>Backdate diizinkan?</label>
+            <select id="backdate"><option value="">— pilih —</option><option>Tidak</option><option>Ya — maks 5 hari</option><option>Ya — maks 7 hari</option><option>Ya — lainnya</option></select></div>
+          <div class="precedent">Kasus nyata: BRD menulis “coverage = date-to-date − 1 hari, 23:59:59”, dan invoice boleh di-backdate 5 hari. Dua aturan itu berinteraksi — kalau invoice di-backdate, coverage mulai kapan? BRD-nya tidak menjawab.</div>
+        </div>
+
+        <div class="critical">
+          <span class="flag">Range usia — paling sering dikosongkan</span>
+          <div class="grid3">
+            <div class="field"><label>Min age insured</label><input type="number" id="minAge"></div>
+            <div class="field"><label>Max age insured</label><input type="number" id="maxAge"></div>
+            <div class="field"><label>Batas usia inklusif?</label>
+              <select id="ageIncl"><option value="">— pilih —</option><option>Ya — min & max ikut eligible</option><option>Tidak — eksklusif</option><option>Tidak ada batas usia</option></select></div>
+          </div>
+          <div class="field"><label>Usia dihitung terhadap tanggal apa?</label>
+            <select id="ageRef"><option value="">— pilih —</option><option>Tanggal policy issuance</option><option>Tanggal transaksi</option><option>Tanggal invoice</option><option>Tanggal mulai coverage</option><option>Tidak ada batas usia</option></select></div>
+          <div class="precedent">Kasus nyata: kolom “Range Age of Policy Holder” dan “Range Age of Insured” diisi tanda “–”. Itu bukan “tidak ada batas” — itu <b>tidak dijawab</b>. Dua bug produksi (off-by-one + tanggal acuan salah) lahir dari kekosongan yang sama persis.</div>
+        </div>
+
+        <div class="grid2">
+          <div class="field"><label>Komisi PasarPolis (%)</label><input type="number" id="commPP" step="0.1"></div>
+          <div class="field"><label>Komisi partner (%)</label><input type="number" id="commPartner" step="0.1"></div>
+          <div class="field"><label>Cancellation? <span class="why">refund premi</span></label>
+            <select id="cancel"><option value="">— pilih —</option><option>Ya — dengan refund</option><option>Ya — tanpa refund</option><option>Tidak ada</option></select></div>
+          <div class="field"><label>Renewable?</label>
+            <select id="renew"><option value="">— pilih —</option><option>Ya</option><option>Tidak</option></select></div>
+        </div>
+
+        <div class="critical">
+          <span class="flag">Aturan duplikasi polis</span>
+          <div class="grid2">
+            <div class="field"><label>Kunci keunikan polis</label><input type="text" id="uniqKey" placeholder="IMEI / Serial Number"></div>
+            <div class="field"><label>1 kunci boleh punya berapa polis aktif?</label><input type="number" id="maxActive" placeholder="1"></div>
+          </div>
+          <div class="precedent">Kasus nyata: satu BRD menulis “1 Transaction can have multiple insured? <b>Yes</b>” tapi juga “Min &amp; Max Insured per Transaction: <b>1 insured per transaction</b>”. Dua kalimat yang saling bertentangan. Di sini cuma ada satu tempat untuk menjawabnya.</div>
+        </div>
+
+        <div class="field"><label>Field wajib di partner upload template <span class="why">satu baris = satu field, sertakan aturan validasinya</span></label>
+          <textarea id="uploadFields" rows="7" placeholder="Nama Pelanggan — required&#10;KTP No — required, alphanumeric, min 8 char&#10;Harga Gadget — required, numeric, min 1.000.000 max 85.000.000"></textarea></div>
+      </div>
+    </section>
+
+    <!-- 4. CLAIM SPEC -->
+    <section class="card">
+      <h2>Claim spec <span class="tag biz">Business</span></h2>
+      <div class="card-body">
+        <div class="grid2">
+          <div class="field"><label>Cara user mengajukan klaim</label><input type="text" id="claimInit" placeholder="Claim Portal, Poli Chat"></div>
+          <div class="field"><label>Claim portal whitelabel URL</label><input type="text" id="claimUrl" placeholder="partner.policies.contoh.co.id"></div>
+          <div class="field"><label>Yang membayar klaim</label>
+            <select id="claimPayer"><option value="">— pilih —</option><option>Provider langsung</option><option>PasarPolis (deposit fund)</option></select></div>
+          <div class="field"><label>Claim payment SLA (hari kerja)</label><input type="number" id="claimSla"></div>
+          <div class="field"><label>Maks hari inisiasi klaim sejak kejadian</label><input type="number" id="claimInitDays"></div>
+          <div class="field"><label>Maks hari lengkapi dokumen sejak inisiasi</label><input type="number" id="claimDocDays"></div>
+        </div>
+        <div class="precedent">Cek URL whitelabel-nya. Di kasus nyata, BRD mencantumkan subdomain milik <b>partner lain</b> — sisa copy-paste. Kalau lolos ke config, customer diarahkan ke portal yang salah.</div>
+        <div class="field"><label>Aturan auto-reject <span class="why">satu baris = satu aturan</span></label>
+          <textarea id="autoReject" rows="4" placeholder="Klaim diajukan > 14 hari kalender sejak tanggal kejadian&#10;Dokumen dikirim > 60 hari kalender sejak inisiasi&#10;Tanggal kejadian < tanggal mulai polis"></textarea></div>
+      </div>
+    </section>
+
+    <!-- 5. BENEFITS -->
+    <section class="card">
+      <h2>Claim benefits <span class="tag biz">Business</span></h2>
+      <div class="card-body">
+        <p class="hint">Tiap benefit punya deductible, multi-claim, dan batas jumlah klaim sendiri. Di kasus nyata, Benefit 1 tertulis “Unlimited” sementara Benefit 6 &amp; 7 tertulis “1” — tanpa penjelasan. Perbedaan seperti itu harus disengaja, bukan warisan copy-paste.</p>
+        <table class="rows">
+          <thead><tr><th style="width:26%">Nama benefit</th><th style="width:18%">Group</th><th style="width:20%">Deductible</th><th style="width:13%">Multi claim</th><th style="width:16%">Maks jumlah klaim</th><th></th></tr></thead>
+          <tbody id="benefitRows"></tbody>
+        </table>
+        <button class="add" id="addBenefit">+ Tambah benefit</button>
+      </div>
+    </section>
+
+    <!-- 6. NOTIFICATION -->
+    <section class="card">
+      <h2>Notification <span class="tag biz">Business</span></h2>
+      <div class="card-body">
+        <div class="field"><label>Urutan pengiriman notifikasi</label><input type="text" id="notifSeq" placeholder="Kalau ada email → kirim email. Kalau ada nomor HP → kirim WA."></div>
+        <table class="rows">
+          <thead><tr><th style="width:30%">Event</th><th style="width:14%">Email</th><th style="width:14%">WhatsApp</th><th style="width:14%">SMS</th><th style="width:24%">Attachment</th><th></th></tr></thead>
+          <tbody id="notifRows"></tbody>
+        </table>
+        <button class="add" id="addNotif">+ Tambah event notifikasi</button>
+        <div class="precedent">Cek isi template-nya, bukan cuma centang Yes/No. Di kasus nyata, konten WA “Claim Paid” masih memuat link milik <b>partner lain</b> — sisa dari BRD sebelumnya. Ini yang sampai ke customer.</div>
+      </div>
+    </section>
+
+    <!-- 7. REPORT -->
+    <section class="card">
+      <h2>Report &amp; recon <span class="tag biz">Business</span></h2>
+      <div class="card-body">
+        <table class="rows">
+          <thead><tr><th style="width:26%">Report</th><th style="width:16%">Interval</th><th style="width:14%">Jam kirim</th><th style="width:14%">Channel</th><th style="width:20%">Penerima</th><th></th></tr></thead>
+          <tbody id="reportRows"></tbody>
+        </table>
+        <button class="add" id="addReport">+ Tambah report</button>
+        <div class="field" style="margin-top:14px"><label>Recon date mengacu ke</label><input type="text" id="reconDate" placeholder="Invoice date"></div>
+      </div>
+    </section>
+
+    <!-- 8. QA -->
+    <section class="card">
+      <h2>QA test matrix <span class="tag qa">Digenerate</span></h2>
+      <div class="card-body">
+        <p class="hint">Diturunkan dari jawaban di atas. Tiap parameter yang kamu isi melahirkan boundary case-nya sendiri. Kalau parameternya kosong, test case-nya tidak bisa dibuat — dan itulah tepatnya bug yang lolos ke production.</p>
+        <div id="qaOut"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- RAIL -->
+  <aside class="rail">
+    <div class="ledger">
+      <h3>Ambiguity ledger</h3>
+      <p class="sub">Pertanyaan yang belum dijawab. Tiap satu yang dibiarkan kosong akan dijawab oleh engineer dengan tebakan.</p>
+      <div class="score" id="score">0<small> / 0 terjawab</small></div>
+      <div class="verdict v-block" id="verdict">BELUM SIAP</div>
+      <ul class="checks" id="checks"></ul>
+    </div>
+    <div class="panel">
+      <h3>Output</h3>
+      <p>Salin ke Lark akan menempel sebagai tabel — Lark membaca format markdown saat di-paste.</p>
+      <button class="btn-solid" id="toLark2">Salin untuk Lark doc</button>
+      <button class="btn-line" id="toPdf2">Simpan sebagai PDF</button>
+      <button class="btn-line" id="toJson">Unduh JSON (untuk generate config)</button>
+    </div>
+  </aside>
+</div>
+
+<div id="preview"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const val = id => ($(id) && $(id).value.trim()) || '';
+
+/* ---------- dynamic rows ---------- */
+function benefitRow(d={}){
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td><input type="text" class="b-name" value="${d.name||''}"></td>
+  <td><input type="text" class="b-group" value="${d.group||''}"></td>
+  <td><input type="text" class="b-ded" value="${d.ded||''}" placeholder="5% min 100rb"></td>
+  <td><select class="b-multi"><option value="">—</option><option${d.multi==='Ya'?' selected':''}>Ya</option><option${d.multi==='Tidak'?' selected':''}>Tidak</option></select></td>
+  <td><input type="text" class="b-max" value="${d.max||''}" placeholder="1 / unlimited"></td>
+  <td><button class="rm">×</button></td>`;
+  tr.querySelector('.rm').onclick=()=>{tr.remove();refresh();};
+  tr.oninput=refresh; tr.onchange=refresh;
+  $('benefitRows').appendChild(tr);
+}
+function notifRow(d={}){
+  const yn=v=>`<select class="n-${v.k}"><option value="">—</option><option${d[v.k]==='Yes'?' selected':''}>Yes</option><option${d[v.k]==='No'?' selected':''}>No</option></select>`;
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td><input type="text" class="n-event" value="${d.event||''}"></td>
+  <td>${yn({k:'email'})}</td><td>${yn({k:'wa'})}</td><td>${yn({k:'sms'})}</td>
+  <td><input type="text" class="n-att" value="${d.att||''}" placeholder="COI / none"></td>
+  <td><button class="rm">×</button></td>`;
+  tr.querySelector('.rm').onclick=()=>{tr.remove();refresh();};
+  tr.oninput=refresh; tr.onchange=refresh;
+  $('notifRows').appendChild(tr);
+}
+function reportRow(d={}){
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td><input type="text" class="r-name" value="${d.name||''}"></td>
+  <td><select class="r-int"><option value="">—</option><option${d.int==='Daily'?' selected':''}>Daily</option><option${d.int==='Weekly'?' selected':''}>Weekly</option><option${d.int==='Monthly'?' selected':''}>Monthly</option></select></td>
+  <td><input type="text" class="r-time" value="${d.time||''}" placeholder="08:00"></td>
+  <td><select class="r-ch"><option value="">—</option><option${d.ch==='SFTP'?' selected':''}>SFTP</option><option${d.ch==='Email'?' selected':''}>Email</option></select></td>
+  <td><input type="text" class="r-to" value="${d.to||''}"></td>
+  <td><button class="rm">×</button></td>`;
+  tr.querySelector('.rm').onclick=()=>{tr.remove();refresh();};
+  tr.oninput=refresh; tr.onchange=refresh;
+  $('reportRows').appendChild(tr);
+}
+const readRows=(sel,map)=>[...document.querySelectorAll(sel)].map(map);
+const benefits=()=>readRows('#benefitRows tr',tr=>({name:tr.querySelector('.b-name').value.trim(),group:tr.querySelector('.b-group').value.trim(),ded:tr.querySelector('.b-ded').value.trim(),multi:tr.querySelector('.b-multi').value,max:tr.querySelector('.b-max').value.trim()}));
+const notifs=()=>readRows('#notifRows tr',tr=>({event:tr.querySelector('.n-event').value.trim(),email:tr.querySelector('.n-email').value,wa:tr.querySelector('.n-wa').value,sms:tr.querySelector('.n-sms').value,att:tr.querySelector('.n-att').value.trim()}));
+const reports=()=>readRows('#reportRows tr',tr=>({name:tr.querySelector('.r-name').value.trim(),int:tr.querySelector('.r-int').value,time:tr.querySelector('.r-time').value.trim(),ch:tr.querySelector('.r-ch').value,to:tr.querySelector('.r-to').value.trim()}));
+
+/* ---------- checks ---------- */
+function runChecks(){
+  const b=benefits(), n=notifs(), r=reports();
+  const c=[
+    ['Partner, provider, dan package sudah dinamai', !!(val('partnerName')&&val('provider')&&val('packageName'))],
+    ['Volume polis & klaim per bulan terisi', !!(val('volPolicy')&&val('volClaim'))],
+    ['Reuse config partner lain sudah dijawab', !!val('reuse')],
+    ['Premi dan TSI terisi', !!(val('premium')&&val('tsi'))],
+    ['Coverage: durasi, tanggal mulai, tanggal berakhir', !!(val('coverDays')&&val('coverStart')&&val('coverEnd'))],
+    ['Backdate: diizinkan atau tidak', !!val('backdate')],
+    ['Batas usia: inklusif atau eksklusif', !!val('ageIncl')],
+    ['Usia dihitung terhadap tanggal apa', !!val('ageRef')],
+    ['Min age < max age', val('ageIncl')==='Tidak ada batas usia' || (!!val('minAge')&&!!val('maxAge')&&(+val('minAge') < +val('maxAge')))],
+    ['Kunci keunikan polis & batas polis aktif', !!(val('uniqKey')&&val('maxActive'))],
+    ['Field upload template didefinisikan', val('uploadFields').split('\n').filter(x=>x.trim()).length>0],
+    ['Claim: SLA, batas inisiasi, batas dokumen', !!(val('claimSla')&&val('claimInitDays')&&val('claimDocDays'))],
+    ['Aturan auto-reject didefinisikan', val('autoReject').split('\n').filter(x=>x.trim()).length>0],
+    ['Setiap benefit punya deductible & batas klaim', b.length>0 && b.every(x=>x.name&&x.ded&&x.max&&x.multi)],
+    ['Minimal satu event notifikasi dikonfigurasi', n.length>0 && n.every(x=>x.event&&x.email)],
+    ['Report & recon date didefinisikan', r.length>0 && !!val('reconDate')],
+  ];
+  const pass=c.filter(x=>x[1]).length;
+  $('checks').innerHTML=c.map(([label,ok])=>
+    `<li><span class="mark ${ok?'m-pass':'m-fail'}">${ok?'OK':'??'}</span><span>${label}</span></li>`).join('');
+  $('score').innerHTML=`${pass}<small> / ${c.length} terjawab</small>`;
+  const v=$('verdict');
+  if(pass===c.length){v.className='verdict v-ready';v.textContent='SIAP DIKEMBANGKAN';}
+  else{v.className='verdict v-block';v.textContent=`${c.length-pass} PERTANYAAN BELUM DIJAWAB`;}
+  return {pass,total:c.length,checks:c};
+}
+
+/* ---------- QA matrix ---------- */
+function qaMatrix(){
+  const t=[]; let i=1;
+  const id=()=>'T-'+String(i++).padStart(2,'0');
+  const incl=val('ageIncl'), ref=val('ageRef'), mn=val('minAge'), mx=val('maxAge');
+  if(incl && incl!=='Tidak ada batas usia' && mn && mx){
+    const inclusive = incl.startsWith('Ya');
+    t.push([id(),'Usia tepat di batas minimum',`DOB = tepat ${mn} tahun pada ${ref||'tanggal acuan'}`, inclusive?'Polis terbit':'Ditolak']);
+    t.push([id(),'Usia sehari di bawah minimum',`DOB = ${mn} tahun kurang 1 hari`,'Ditolak']);
+    t.push([id(),'Usia tepat di batas maksimum',`DOB = tepat ${mx} tahun pada ${ref||'tanggal acuan'}`, inclusive?'Polis terbit':'Ditolak']);
+    t.push([id(),'Usia sehari di atas maksimum',`DOB = ${mx} tahun lebih 1 hari`,'Ditolak']);
+    if(ref) t.push([id(),'Usia dihitung dari tanggal yang salah',`Eligible jika dihitung dari tanggal lain, tidak eligible dari ${ref}`,`Ditolak — ${ref} yang berlaku`]);
+  } else {
+    t.push(['—','Boundary usia tidak bisa digenerate','Batas usia / tanggal acuan belum dijawab','—']);
+  }
+  if(val('coverDays')&&val('coverStart')&&val('coverEnd'))
+    t.push([id(),'Periode coverage sesuai konfigurasi',`Beli polis, mulai dari ${val('coverStart').toLowerCase()}`,`Berakhir ${val('coverDays')} hari kemudian, ${val('coverEnd').toLowerCase()}`]);
+  if(val('backdate')&&val('backdate')!=='Tidak')
+    t.push([id(),'Backdate di batas maksimum',`Invoice di-backdate sesuai batas`,'Polis terbit, coverage sesuai aturan']);
+  if(val('backdate'))
+    t.push([id(),'Backdate melewati batas','Invoice di-backdate melebihi batas','Ditolak']);
+  if(val('premium')) t.push([id(),'Premi yang ditagih sesuai konfigurasi','Beli polis',`Premi = IDR ${(+val('premium')).toLocaleString('id-ID')}`]);
+  if(val('uniqKey')&&val('maxActive'))
+    t.push([id(),'Polis duplikat pada kunci yang sama',`Beli 2x dengan ${val('uniqKey')} yang sama`,`Pembelian ke-${+val('maxActive')+1} ditolak`]);
+  if(val('claimInitDays')){
+    t.push([id(),'Klaim tepat di batas waktu inisiasi',`Ajukan pada hari ke-${val('claimInitDays')} sejak kejadian`,'Diterima']);
+    t.push([id(),'Klaim melewati batas waktu inisiasi',`Ajukan pada hari ke-${+val('claimInitDays')+1}`,'Auto-reject']);
+  }
+  t.push([id(),'Klaim atas kejadian sebelum polis mulai','Tanggal kejadian < tanggal mulai polis','Auto-reject']);
+  benefits().filter(b=>b.name&&b.ded).forEach(b=>{
+    t.push([id(),`Deductible — ${b.name}`,`Ajukan klaim pada benefit ini`,`Potongan diterapkan: ${b.ded}`]);
+    if(b.multi==='Tidak') t.push([id(),`Klaim kedua ditolak — ${b.name}`,'Ajukan klaim kedua pada benefit yang sama','Ditolak (multi-claim = tidak)']);
+  });
+  notifs().filter(n=>n.event&&n.email==='Yes').forEach(n=>
+    t.push([id(),`Notifikasi email — ${n.event}`,`Trigger event ${n.event}`,`Email terkirim${n.att?', lampiran: '+n.att:''}`]));
+  if(val('volPolicy'))
+    t.push([id(),'Load test pada volume puncak',`${(+val('volPolicy')).toLocaleString('id-ID')} polis/bulan`,'Tidak ada kegagalan pembuatan polis']);
+
+  $('qaOut').innerHTML = `<table class="rows"><thead><tr><th style="width:8%">ID</th><th style="width:28%">Skenario</th><th style="width:32%">Input</th><th style="width:32%">Hasil yang diharapkan</th></tr></thead><tbody>${
+    t.map(r=>`<tr>${r.map(c=>`<td style="padding:7px 8px">${c}</td>`).join('')}</tr>`).join('')}</tbody></table>
+    <p class="hint" style="margin-top:12px">${t.length} test case digenerate dari parameter di atas.</p>`;
+  return t;
+}
+
+/* ---------- markdown ---------- */
+const or = (v,label) => v ? v : `*BELUM DIJAWAB — ${label}*`;
+function markdown(){
+  const b=benefits(), n=notifs(), r=reports(), t=qaMatrix(), ck=runChecks();
+  const row=(k,v)=>`| ${k} | ${v} |`;
+  let m = `# BRD — ${or(val('packageName'),'nama package')}\n\n`;
+  m += `**Partner:** ${or(val('partnerName'),'partner')} · **Provider:** ${or(val('provider'),'provider')} · **Target release:** ${or(val('targetRelease'),'target release')}\n\n`;
+  m += `> Kesiapan: **${ck.pass}/${ck.total}** pertanyaan terjawab. ${ck.pass===ck.total?'Siap dikembangkan.':'Belum siap — masih ada pertanyaan terbuka di bawah.'}\n\n`;
+
+  m += `## 1. Identitas partner\n\n| Field | Value |\n|---|---|\n`;
+  m += [row('Partner name',or(val('partnerName'),'partner')),row('Insurance provider',or(val('provider'),'provider')),
+        row('Product name',or(val('productName'),'product')),row('Package name',or(val('packageName'),'package')),
+        row('Target release',or(val('targetRelease'),'tanggal')),
+        row('Business owner',or(val('bizOwner'),'PIC')),row('Product owner',or(val('prodOwner'),'PIC')),
+        row('Expected policies/month',or(val('volPolicy'),'volume polis')),row('Expected claims/month',or(val('volClaim'),'volume klaim')),
+        row('Expected GWP/month',val('gwp')?'IDR '+(+val('gwp')).toLocaleString('id-ID'):'*BELUM DIJAWAB — GWP*'),
+        row('Reuse config',or(val('reuse'),'reuse')+(val('reuseRef')?' — '+val('reuseRef'):''))].join('\n');
+
+  m += `\n\n## 2. Partnership model\n\n| Pertanyaan | Jawaban |\n|---|---|\n`;
+  m += [row('Model bisnis partner',or(val('pmBiz'),'model bisnis')),row('Target user',or(val('pmUser'),'target user')),
+        row('Cara ditawarkan',or(val('pmOffer'),'cara penawaran')),row('Objek diasuransikan',or(val('pmObject'),'objek')),
+        row('Peran PasarPolis',or(val('pmRole'),'peran')),row('Kategori OJK',or(val('ojk'),'kategori OJK')),
+        row('Kategori PasarPolis',or(val('ppCat'),'kategori PP'))].join('\n');
+
+  m += `\n\n## 3. Policy spec\n\n| Field | Value |\n|---|---|\n`;
+  m += [row('Metode integrasi',or(val('polApi'),'metode')),row('Partner menyediakan API',or(val('partnerApi'),'API partner')),
+        row('Policy number digenerate oleh',or(val('polNum'),'generator policy no')),
+        row('Premi',val('premium')?'IDR '+(+val('premium')).toLocaleString('id-ID'):'*BELUM DIJAWAB — premi*'),
+        row('Maximum TSI',val('tsi')?'IDR '+(+val('tsi')).toLocaleString('id-ID'):'*BELUM DIJAWAB — TSI*'),
+        row('Coverage period',val('coverDays')?val('coverDays')+' hari':'*BELUM DIJAWAB — durasi*'),
+        row('Coverage mulai',or(val('coverStart'),'tanggal mulai')),row('Coverage berakhir',or(val('coverEnd'),'tanggal berakhir')),
+        row('Backdate',or(val('backdate'),'aturan backdate')),
+        row('**Min age**',or(val('minAge'),'min age')),row('**Max age**',or(val('maxAge'),'max age')),
+        row('**Batas usia inklusif?**',or(val('ageIncl'),'inklusif/eksklusif')),
+        row('**Usia dihitung terhadap**',or(val('ageRef'),'tanggal acuan usia')),
+        row('Komisi PasarPolis',val('commPP')?val('commPP')+'%':'*BELUM DIJAWAB*'),
+        row('Komisi partner',val('commPartner')?val('commPartner')+'%':'*BELUM DIJAWAB*'),
+        row('Cancellation',or(val('cancel'),'cancellation')),row('Renewable',or(val('renew'),'renewable')),
+        row('Kunci keunikan polis',or(val('uniqKey'),'kunci unik')),
+        row('Maks polis aktif per kunci',or(val('maxActive'),'batas polis aktif'))].join('\n');
+
+  const uf=val('uploadFields').split('\n').filter(x=>x.trim());
+  m += `\n\n**Field upload template partner**\n\n`;
+  m += uf.length?uf.map(x=>`- ${x.trim()}`).join('\n'):`*BELUM DIJAWAB — field upload template*`;
+
+  m += `\n\n## 4. Claim spec\n\n| Field | Value |\n|---|---|\n`;
+  m += [row('Cara inisiasi klaim',or(val('claimInit'),'cara inisiasi')),
+        row('Claim portal URL',or(val('claimUrl'),'URL portal')),
+        row('Pembayar klaim',or(val('claimPayer'),'pembayar')),
+        row('SLA pembayaran',val('claimSla')?val('claimSla')+' hari kerja':'*BELUM DIJAWAB*'),
+        row('Maks hari inisiasi klaim',or(val('claimInitDays'),'batas inisiasi')),
+        row('Maks hari lengkapi dokumen',or(val('claimDocDays'),'batas dokumen'))].join('\n');
+  const ar=val('autoReject').split('\n').filter(x=>x.trim());
+  m += `\n\n**Auto-reject**\n\n`+(ar.length?ar.map(x=>`- ${x.trim()}`).join('\n'):`*BELUM DIJAWAB — aturan auto-reject*`);
+
+  m += `\n\n## 5. Claim benefits\n\n| Benefit | Group | Deductible | Multi claim | Maks jumlah klaim |\n|---|---|---|---|---|\n`;
+  m += b.length?b.map(x=>`| ${x.name||'—'} | ${x.group||'—'} | ${x.ded||'*kosong*'} | ${x.multi||'*kosong*'} | ${x.max||'*kosong*'} |`).join('\n'):'| *BELUM DIJAWAB* | | | | |';
+
+  m += `\n\n## 6. Notification\n\n**Urutan:** ${or(val('notifSeq'),'urutan notifikasi')}\n\n| Event | Email | WhatsApp | SMS | Attachment |\n|---|---|---|---|---|\n`;
+  m += n.length?n.map(x=>`| ${x.event||'—'} | ${x.email||'—'} | ${x.wa||'—'} | ${x.sms||'—'} | ${x.att||'—'} |`).join('\n'):'| *BELUM DIJAWAB* | | | | |';
+
+  m += `\n\n## 7. Report & recon\n\n| Report | Interval | Jam | Channel | Penerima |\n|---|---|---|---|---|\n`;
+  m += r.length?r.map(x=>`| ${x.name||'—'} | ${x.int||'—'} | ${x.time||'—'} | ${x.ch||'—'} | ${x.to||'—'} |`).join('\n'):'| *BELUM DIJAWAB* | | | | |';
+  m += `\n\nRecon date mengacu ke: ${or(val('reconDate'),'recon date')}\n`;
+
+  m += `\n\n## 8. QA test matrix (digenerate dari spec di atas)\n\n| ID | Skenario | Input | Hasil yang diharapkan |\n|---|---|---|---|\n`;
+  m += t.map(x=>`| ${x[0]} | ${x[1]} | ${x[2]} | ${x[3]} |`).join('\n');
+
+  m += `\n\n## 9. Pertanyaan yang belum dijawab\n\n`;
+  const open=ck.checks.filter(x=>!x[1]);
+  m += open.length?open.map(x=>`- [ ] ${x[0]}`).join('\n'):'Tidak ada. BRD siap diserahkan ke engineering.';
+  m += `\n\n---\n\nDigenerate dari BRD Generator · struktur mengikuti Partnership Project v2.2\n`;
+  return m;
+}
+
+/* ---------- preview for PDF ---------- */
+function buildPreview(){
+  const md=markdown();
+  const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  const lines=md.split('\n'); let html=''; let inTable=false; let headDone=false;
+  const inline=s=>esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\*(.+?)\*/g,'<span class="miss">$1</span>');
+  for(const raw of lines){
+    const l=raw.trim();
+    if(l.startsWith('|')){
+      const cells=l.split('|').slice(1,-1).map(c=>c.trim());
+      if(cells.every(c=>/^-+$/.test(c))){headDone=true;continue;}
+      if(!inTable){html+='<table>';inTable=true;headDone=false;
+        html+='<tr>'+cells.map(c=>`<th>${inline(c)}</th>`).join('')+'</tr>';continue;}
+      html+='<tr>'+cells.map(c=>`<td>${inline(c)}</td>`).join('')+'</tr>';continue;
+    }
+    if(inTable){html+='</table>';inTable=false;}
+    if(l.startsWith('## ')) html+=`<h2>${inline(l.slice(3))}</h2>`;
+    else if(l.startsWith('# ')) html+=`<h1>${inline(l.slice(2))}</h1>`;
+    else if(l.startsWith('**') && l.endsWith('**')) html+=`<h3>${inline(l)}</h3>`;
+    else if(l.startsWith('- ')) html+=`<div style="padding-left:16px">• ${inline(l.slice(2))}</div>`;
+    else if(l.startsWith('> ')) html+=`<p style="background:#f1f3f5;padding:10px;border-left:3px solid #2b4a6f">${inline(l.slice(2))}</p>`;
+    else if(l==='---') html+='<hr>';
+    else if(l) html+=`<p>${inline(l)}</p>`;
+  }
+  if(inTable) html+='</table>';
+  $('preview').innerHTML=html;
+}
+
+/* ---------- actions ---------- */
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2200);}
+function copyLark(){
+  navigator.clipboard.writeText(markdown())
+    .then(()=>toast('Tersalin. Paste langsung ke Lark doc — tabelnya akan terbentuk sendiri.'))
+    .catch(()=>toast('Gagal menyalin. Coba lagi.'));
+}
+function savePdf(){buildPreview();window.print();}
+function saveJson(){
+  const data={meta:{partner:val('partnerName'),provider:val('provider'),package:val('packageName')},
+    policy:{premium:+val('premium')||null,tsi:+val('tsi')||null,coverageDays:+val('coverDays')||null,coverageStart:val('coverStart'),coverageEnd:val('coverEnd'),backdate:val('backdate'),
+      minAge:+val('minAge')||null,maxAge:+val('maxAge')||null,ageInclusive:val('ageIncl'),ageReferenceDate:val('ageRef'),
+      uniquenessKey:val('uniqKey'),maxActivePolicies:+val('maxActive')||null,
+      uploadFields:val('uploadFields').split('\n').filter(x=>x.trim())},
+    claim:{slaDays:+val('claimSla')||null,maxInitiateDays:+val('claimInitDays')||null,maxDocDays:+val('claimDocDays')||null,
+      autoReject:val('autoReject').split('\n').filter(x=>x.trim()),portalUrl:val('claimUrl')},
+    benefits:benefits(),notifications:notifs(),reports:reports(),
+    volume:{policiesPerMonth:+val('volPolicy')||null,claimsPerMonth:+val('volClaim')||null,gwpPerMonth:+val('gwp')||null}};
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download=`brd-${(val('partnerName')||'partner').toLowerCase().replace(/\s+/g,'-')}.json`;
+  a.click();
+  toast('JSON tersimpan. Ini yang nanti dipakai untuk generate config & test case.');
+}
+
+/* ---------- kasus latihan (data disamarkan) ---------- */
+const CALOSA={partnerName:'Contoh — Retailer Laptop',provider:'Provider A',productName:'Moveable All Risk (Mandatory)',
+ packageName:'3 Months 3 Mio Bundling',targetRelease:'May 2026',bizOwner:'Nama Business Owner',prodOwner:'Nabilla Atelya',
+ volPolicy:'800',volClaim:'',gwp:'',reuse:'',
+ pmBiz:'General trading produk IT & retailer laptop',pmUser:'Customer yang membeli device di toko',pmOffer:'Mandatory / bundling',
+ pmObject:'Device baru: smartphone, tablet, laptop, PC desktop, PC all-in-one',pmRole:'Insurance broker',ojk:'Miscellaneous',ppCat:'Device',
+ polApi:'SFTP',partnerApi:'Tidak — pakai Partners Panel',polNum:'PasarPolis',premium:'20000',tsi:'3000000',coverDays:'90',
+ coverStart:'',coverEnd:'Date-to-date − 1 hari, 23:59:59',backdate:'Ya — maks 5 hari',
+ minAge:'',maxAge:'',ageIncl:'',ageRef:'',commPP:'',commPartner:'',cancel:'Ya — tanpa refund',renew:'Tidak',
+ uniqKey:'IMEI / Serial Number',maxActive:'1',
+ uploadFields:'Nama Pelanggan — required\nKTP/Passport/SIM/NPWP — required, alphanumeric, min 8 char\nEmail — required, format email\nPhone Number — required, awalan 62 atau 08\nHarga Gadget — required, numeric, min 1.000.000 max 85.000.000\nGadget Brand — required\nModel Gadget — required\nTipe Gadget — required, dropdown\nNomor IMEI/SN — required, alphanumeric min 5 char\nTanggal Invoice — required, backdate maks 5 hari\nNomor Invoice — required\nNama Toko — required',
+ claimInit:'Claim Portal, Poli Chat',claimUrl:'partnerlain.policies.contoh.co.id',claimPayer:'Provider langsung',
+ claimSla:'14',claimInitDays:'14',claimDocDays:'60',
+ autoReject:'Klaim diajukan > 14 hari kalender sejak tanggal kejadian\nDokumen dikirim > 60 hari kalender sejak inisiasi\nTanggal kejadian < tanggal mulai polis',
+ notifSeq:'Kalau ada email → kirim email. Kalau ada nomor HP → kirim WA.',reconDate:'Invoice date'};
+const CAL_BENEFITS=[
+ {name:'Kerusakan sebagian tidak terduga',group:'Accidental Damage',ded:'5% min 100rb',multi:'Ya',max:'unlimited'},
+ {name:'Kerusakan total tidak terduga',group:'Accidental Damage',ded:'5% min 150rb',multi:'',max:'unlimited'},
+ {name:'Kerusakan sebagian karena cairan',group:'Liquid Damage',ded:'5% min 100rb',multi:'Ya',max:'unlimited'},
+ {name:'Kerusakan total karena cairan',group:'Liquid Damage',ded:'5% min 150rb',multi:'Tidak',max:'unlimited'},
+ {name:'Kerusakan sebagian — kebakaran/petir/bencana',group:'Fire & Natural Disaster',ded:'5% min 100rb',multi:'Tidak',max:'unlimited'},
+ {name:'Kerusakan total — kebakaran/petir/bencana',group:'Fire & Natural Disaster',ded:'5% min 150rb',multi:'Tidak',max:'1'},
+ {name:'Kehilangan karena pencurian/perampokan',group:'Burglary & Theft',ded:'10% min 300rb',multi:'Tidak',max:'1'}];
+const CAL_NOTIF=[
+ {event:'Policy Creation',email:'Yes',wa:'Yes',sms:'No',att:'COI + Wording'},
+ {event:'Claim Initiated',email:'Yes',wa:'Yes',sms:'No',att:'none'},
+ {event:'Document Received',email:'Yes',wa:'Yes',sms:'No',att:'none'},
+ {event:'Document Verified',email:'Yes',wa:'Yes',sms:'No',att:'none'},
+ {event:'Salvage Pending',email:'Yes',wa:'Yes',sms:'No',att:'none'},
+ {event:'Claim Accepted',email:'Yes',wa:'Yes',sms:'No',att:'none'},
+ {event:'Claim Rejected',email:'Yes',wa:'Yes',sms:'No',att:'none'},
+ {event:'Claim Paid',email:'Yes',wa:'Yes',sms:'No',att:'none'}];
+const CAL_REPORT=[
+ {name:'Policy Creation Report',int:'Daily',time:'08:00',ch:'SFTP',to:'Provider A'},
+ {name:'Claim Settled & Rejected',int:'Weekly',time:'07:00',ch:'SFTP',to:'Provider A'}];
+
+function loadCalosa(){
+  clearAll(false);
+  Object.entries(CALOSA).forEach(([k,v])=>{if($(k))$(k).value=v;});
+  CAL_BENEFITS.forEach(benefitRow); CAL_NOTIF.forEach(notifRow); CAL_REPORT.forEach(reportRow);
+  $('reuseRefWrap').style.display='none';
+  refresh();
+  toast('Kasus latihan dimuat. Lihat panel kanan — itu yang belum terjawab.');
+}
+function clearAll(t=true){
+  document.querySelectorAll('input,select,textarea').forEach(e=>e.value='');
+  $('prodOwner').value='Nabilla Atelya';
+  ['benefitRows','notifRows','reportRows'].forEach(id=>$(id).innerHTML='');
+  benefitRow(); notifRow(); reportRow();
+  if(t){refresh();toast('Dikosongkan.');}
+}
+function refresh(){runChecks();qaMatrix();}
+
+/* ---------- wire ---------- */
+document.addEventListener('input',e=>{if(e.target.closest('main'))refresh();});
+document.addEventListener('change',e=>{
+  if(e.target.id==='reuse') $('reuseRefWrap').style.display = e.target.value.startsWith('Ya')?'block':'none';
+  if(e.target.closest('main'))refresh();
+});
+$('addBenefit').onclick=()=>{benefitRow();refresh();};
+$('addNotif').onclick=()=>{notifRow();refresh();};
+$('addReport').onclick=()=>{reportRow();refresh();};
+$('loadCalosa').onclick=loadCalosa;
+$('clearAll').onclick=()=>clearAll();
+$('toLark').onclick=copyLark; $('toLark2').onclick=copyLark;
+$('toPdf').onclick=savePdf; $('toPdf2').onclick=savePdf;
+$('toJson').onclick=saveJson;
+
+loadCalosa();
+</script>
+</body>
+</html>
