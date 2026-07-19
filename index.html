@@ -48,7 +48,28 @@ section.card{background:var(--panel);border:1px solid var(--line);border-radius:
 .req{color:var(--fail);font-weight:700;margin-left:2px}
 .opt{color:var(--muted);font-size:10.5px;font-weight:400;letter-spacing:.02em}
 .legend{font-size:11.5px;color:var(--muted);margin:6px 0 0}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr .7fr;gap:12px}
+.autosave{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#9aa5b1;align-self:center;margin-right:4px;letter-spacing:.04em}
+.review-box{border:1px solid var(--line);border-left:3px solid var(--steel);background:#f7f9fb;border-radius:0 6px 6px 0;padding:13px 15px;margin:0 0 16px}
+.review-box .flag{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--steel);display:block;margin-bottom:10px}
 .benefit-block{border:1px solid var(--line);border-radius:8px;padding:14px;margin:0 0 12px;background:#fbfcfd}
+.plan-block{border:1px solid #c8d2dc;border-radius:10px;padding:16px;margin:0 0 16px;background:#fff;box-shadow:var(--shadow)}
+.plan-head{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding-bottom:12px;border-bottom:2px solid var(--ink);margin-bottom:14px}
+.plan-head .field{margin:0}
+.plan-head .p-name-wrap{flex:2;min-width:160px}
+.plan-head .p-code-wrap{flex:1;min-width:110px}
+.plan-head .p-status-wrap{flex:1;min-width:130px}
+.plan-tag{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--steel);background:#eef2f6;border-radius:4px;padding:3px 7px;align-self:center}
+.plan-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:12px}
+.plan-sub{margin-top:12px}
+.plan-benefits{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
+.plan-benefits-label{font-size:12.5px;font-weight:600;margin-bottom:8px}
+.rm-plan{background:#fff;color:var(--fail);border:1px solid #e6c9cb;border-radius:5px;padding:6px 11px;font-size:11.5px;cursor:pointer;align-self:center}
+.rm-plan:hover{background:#fbeeef}
+.diverge{border-left:3px solid var(--signal);background:#fff8f1;padding:11px 13px;border-radius:0 6px 6px 0;margin:0 0 14px;font-size:12.5px}
+.diverge b{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--signal);display:block;margin-bottom:5px}
+.diverge.clean{border-left-color:var(--pass);background:#f2f8f5}
+.diverge.clean b{color:var(--pass)}
 .bb-grid{display:grid;grid-template-columns:1.5fr 1fr 1.2fr .85fr 1fr;gap:10px}
 .bb-docs{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
 .bb-docs-label{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:6px}
@@ -140,10 +161,12 @@ table.rows input,table.rows select,table.rows textarea{padding:6px 8px;font-size
   <div>
     <h1>BRD Generator — Partner Integration</h1>
     <p>PasarPolis · Partner Ecosystem · reusable across ID / TH / VN partners · structure follows Partnership Project v2.2</p>
-    <p class="legend"><span class="req">*</span> = required to reach <strong>READY TO BUILD</strong> — every one is tracked live in the ambiguity ledger on the right.</p>
+    <p class="legend"><span class="req">*</span> = required to reach <strong>READY TO BUILD</strong> — every one is tracked live in the readiness checklist on the right.</p>
   </div>
   <div class="actions">
-    <button class="btn-ghost" id="loadSample">Load sample</button>
+    <span class="autosave" id="autosave"></span>
+    <input type="file" id="jsonFile" accept="application/json,.json" style="display:none">
+    <button class="btn-ghost" id="loadJson">Load JSON</button>
     <button class="btn-ghost" id="clearAll">Clear</button>
     <button class="btn-primary" id="toLark">Copy for Lark</button>
     <button class="btn-primary" id="toPdf">Save PDF</button>
@@ -160,16 +183,27 @@ table.rows input,table.rows select,table.rows textarea{padding:6px 8px;font-size
         <div class="grid2">
           <div class="field"><label>Partner name</label><input type="text" id="partnerName"></div>
           <div class="field"><label>Insurance provider</label><input type="text" id="provider"></div>
-          <div class="field"><label>Product name</label><input type="text" id="productName"></div>
-          <div class="field"><label>Package name</label><input type="text" id="packageName"></div>
+          <div class="field"><label>Product name <span class="why">shared across all plans — package names live in each plan below</span></label><input type="text" id="productName"></div>
           <div class="field"><label>Market / region <span class="why">who operates this partner</span></label>
             <select id="market"><option value="">— select —</option><option>Indonesia</option><option>Thailand</option><option>Vietnam</option><option>Singapore</option><option>Philippines</option></select></div>
           <div class="field"><label>Content locales <span class="why">comma-separated — e.g. en or en, th</span></label><input type="text" id="locales" placeholder="en"></div>
           <div class="field"><label>Target release</label><input type="text" id="targetRelease" placeholder="Aug 2026"></div>
-          <div class="field"><label>Jira Epic <span class="why">required — link to INT-xxxx</span></label><input type="text" id="jiraEpic" placeholder="INT-4403"></div>
+          <div class="field"><label>Jira Epic <span class="why">optional — link to INT-xxxx once it exists</span></label><input type="text" id="jiraEpic" placeholder="INT-4403"></div>
           <div class="field"><label>Business owner</label><input type="text" id="bizOwner"></div>
           <div class="field"><label>Product owner</label><input type="text" id="prodOwner"></div>
         </div>
+        <div class="review-box">
+          <span class="flag">Review &amp; hand-off</span>
+          <div class="grid4">
+            <div class="field"><label>Prepared by <span class="why">partner team</span></label><input type="text" id="preparedBy"></div>
+            <div class="field"><label>Reviewed by <span class="why">PasarPolis PM</span></label><input type="text" id="reviewedBy"></div>
+            <div class="field"><label>Status</label>
+              <select id="docStatus"><option value="">— select —</option><option>Draft — partner</option><option>In review — PM</option><option>Approved — ready for config</option></select></div>
+            <div class="field"><label>Version</label><input type="text" id="docVersion" placeholder="v1.0"></div>
+          </div>
+          <div class="precedent">Fill these before handing the JSON over. When a draft goes back and forth, the version and status are what stop an old file from being uploaded to config by mistake.</div>
+        </div>
+
         <div class="critical">
           <span class="flag">Used for capacity planning</span>
           <div class="grid2">
@@ -243,16 +277,14 @@ table.rows input,table.rows select,table.rows textarea{padding:6px 8px;font-size
         </div>
 
         <div class="critical">
-          <span class="flag">Age range — most commonly left blank</span>
-          <div class="grid3">
-            <div class="field"><label>Min age insured</label><input type="number" id="minAge"></div>
-            <div class="field"><label>Max age insured</label><input type="number" id="maxAge"></div>
+          <span class="flag">Age rules — most commonly left blank</span>
+          <div class="grid2">
             <div class="field"><label>Age bounds inclusive?</label>
               <select id="ageIncl"><option value="">— select —</option><option>Yes — min &amp; max are eligible</option><option>No — exclusive</option><option>No age limit</option></select></div>
+            <div class="field"><label>Age is measured against which date?</label>
+              <select id="ageRef"><option value="">— select —</option><option>Policy issuance date</option><option>Transaction date</option><option>Invoice date</option><option>Coverage start date</option><option>No age limit</option></select></div>
           </div>
-          <div class="field"><label>Age is measured against which date?</label>
-            <select id="ageRef"><option value="">— select —</option><option>Policy issuance date</option><option>Transaction date</option><option>Invoice date</option><option>Coverage start date</option><option>No age limit</option></select></div>
-          <div class="precedent">When "age range" is filled with a dash "–", that is not "no limit" — it is <b>unanswered</b>. Two ShopeePay VN bugs (off-by-one + wrong reference date) came from exactly this gap.</div>
+          <div class="precedent">These two answers apply to every plan. The actual <b>min / max age numbers</b> are set per plan below — in the VFS BRD, Plans 1 and 2 allowed 1–75 while Plans 3 and 4 allowed 15–75. When "age range" is filled with a dash "–", that is not "no limit" — it is <b>unanswered</b>.</div>
         </div>
 
         <div class="grid2">
@@ -276,70 +308,22 @@ table.rows input,table.rows select,table.rows textarea{padding:6px 8px;font-size
       </div>
     </section>
 
-    <!-- 3b. PREMIUM ENGINE -->
+    <!-- 3b. PREMIUM — SHARED SETTINGS -->
     <section class="card">
       <h2>Premium &amp; pricing <span class="tag biz">Business</span></h2>
       <div class="card-body">
-        <p class="hint">Premium is rarely a single flat number. Pick the method that matches the BRD, then run the simulator with a sample value — that is what catches the classic range-boundary bug (does an item priced exactly at a range edge fall in the lower or upper range?).</p>
+        <p class="hint">These settings apply to every plan. The premium amount itself — and whether it is fixed, a percentage, or tiered — is set inside each plan below, because plans usually price differently.</p>
 
-        <div class="grid3">
+        <div class="grid2">
           <div class="field"><label>Currency</label>
             <select id="premCurrency"><option value="">— select —</option><option>IDR</option><option>THB</option><option>VND</option><option>SGD</option><option>PHP</option></select></div>
-          <div class="field"><label>Premium method</label>
-            <select id="premMethod"><option value="">— select —</option><option>Fixed</option><option>Percentage of a base</option><option>Tiered</option></select></div>
-          <div class="field"><label>Max TSI (per policy) <span class="why">sum insured cap</span></label><input type="number" id="tsi"></div>
+          <div class="field"><label>Premium basis</label>
+            <select id="premBasis"><option value="">— select —</option><option>Per policy</option><option>Per insured (× number of insured)</option><option>Per item</option></select></div>
         </div>
 
-        <!-- FIXED -->
-        <div class="subpanel hidden" id="panelFixed">
-          <div class="field"><label>Fixed premium amount</label><input type="number" id="premFixed"></div>
-        </div>
-
-        <!-- PERCENTAGE -->
-        <div class="subpanel hidden" id="panelPct">
-          <div class="grid3">
-            <div class="field"><label>Rate (%)</label><input type="number" id="premRate" step="0.01" placeholder="1.5"></div>
-            <div class="field"><label>Applied to (base)</label>
-              <select id="premBase"><option value="">— select —</option><option>Max TSI</option><option>Product / item price</option><option>Loan / financing amount</option><option>Coverage amount</option><option>Custom parameter</option></select></div>
-            <div class="field"><label>Custom base name <span class="why">only if "Custom parameter"</span></label><input type="text" id="premBaseCustom" placeholder="e.g. disbursed principal"></div>
-          </div>
-          <div class="grid2">
-            <div class="field"><label>Floor / min premium <span class="why">optional</span></label><input type="number" id="premFloor"></div>
-            <div class="field"><label>Cap / max premium <span class="why">optional</span></label><input type="number" id="premCap"></div>
-          </div>
-          <div class="precedent">Amartha charges "1.5% of loan". Without a floor, a tiny loan yields a premium of a few rupiah that the provider will reject at settlement. Always ask whether a floor/cap exists.</div>
-        </div>
-
-        <!-- TIERED -->
-        <div class="subpanel hidden" id="panelTier">
-          <div class="field"><label>Ranges are based on <span class="why">the value that decides which range applies</span></label>
-            <select id="premDriver"><option value="">— select —</option><option>Product / item price</option><option>Max TSI</option><option>Loan / financing amount</option><option>Age</option><option>Coverage days</option><option>SKU / plan</option></select></div>
-          <table class="rows">
-            <thead><tr><th style="width:20%">Label / SKU</th><th style="width:14%">From</th><th style="width:14%">To</th><th style="width:17%">TSI (optional)</th><th style="width:15%">Value</th><th style="width:14%">Value type</th><th></th></tr></thead>
-            <tbody id="premTierRows"></tbody>
-          </table>
-          <button class="add" id="addTier">+ Add tier</button>
-          <div class="tierflag good" id="tierFlag" style="display:none"></div>
-          <div class="precedent">Shopee TH: item price 1–5,000 → premium 135; 5,001–9,999 → 269. The generator flags any gap (an uncovered price) or overlap (a price that matches two ranges) automatically — those are silent mispricing bugs in production.</div>
-        </div>
-
-        <!-- SIMULATOR -->
-        <div class="sim">
-          <h4>Premium simulator <span class="opt">— optional check, not part of the BRD output</span></h4>
-          <p class="hint" style="margin:0 0 10px">Not saved to the BRD — just a quick check. Enter a value to see the premium it produces; handy for testing range edges (try 5000 vs 5001).</p>
-          <div class="grid2">
-            <div class="field" style="margin:0"><label>Sample value <span class="why">e.g. item price, loan, TSI, or age</span></label><input type="number" id="simDriver" placeholder="5000"></div>
-            <div class="field" style="margin:0"><label>Number of insured</label><input type="number" id="simUnits" placeholder="1"></div>
-          </div>
-          <div class="out" id="simOut">Pick a premium method and run a value to see the result.</div>
-        </div>
-
-        <!-- CROSS-CUTTING -->
         <div class="critical">
           <span class="flag">These apply to every method — and are the ones BRDs forget</span>
-          <div class="grid3">
-            <div class="field"><label>Premium basis</label>
-              <select id="premBasis"><option value="">— select —</option><option>Per policy</option><option>Per insured (× number of insured)</option><option>Per item</option></select></div>
+          <div class="grid2">
             <div class="field"><label>Amount entered is</label>
               <select id="premGrossNet"><option value="">— select —</option><option>Gross — charged to the customer</option><option>Net — to provider; loading applies on top</option><option>Not applicable</option></select></div>
             <div class="field"><label>Rounding rule</label>
@@ -351,7 +335,17 @@ table.rows input,table.rows select,table.rows textarea{padding:6px 8px;font-size
           <div class="field"><label>PasarPolis commission (%)</label><input type="number" id="commPP" step="0.1"></div>
           <div class="field"><label>Partner commission (%)</label><input type="number" id="commPartner" step="0.1"></div>
         </div>
+      </div>
+    </section>
 
+    <!-- 3c. PLANS -->
+    <section class="card">
+      <h2>Plans / packages <span class="tag biz">Business</span></h2>
+      <div class="card-body">
+        <p class="hint">One partner often sells several plans under the same product. Each plan carries its own package name and code, its own premium, its own Max TSI and age limits, and its own benefits and claim documents. Add one plan per package — do not fill this tool in several times.</p>
+        <div class="diverge clean" id="planDiverge" style="display:none"></div>
+        <div id="planList"></div>
+        <button class="add" id="addPlan">+ Add plan / package</button>
       </div>
     </section>
 
@@ -370,16 +364,6 @@ table.rows input,table.rows select,table.rows textarea{padding:6px 8px;font-size
         </div>
         <div class="field"><label>Auto-reject rules <span class="why">one line = one rule</span></label>
           <textarea id="autoReject" rows="4" placeholder="Claim filed > 14 calendar days after incident date&#10;Documents sent > 60 calendar days after initiation&#10;Incident date < policy start date"></textarea></div>
-      </div>
-    </section>
-
-    <!-- 5. BENEFITS -->
-    <section class="card">
-      <h2>Claim benefits <span class="tag biz">Business</span></h2>
-      <div class="card-body">
-        <p class="hint">Each benefit has its own deductible, multi-claim flag, claim-count limit — and its own required documents. In these BRDs the document list changes with the claim type (a theft claim needs a police report; a medical claim needs a doctor's certificate), so documents live inside each benefit rather than in one shared list.</p>
-        <div id="benefitList"></div>
-        <button class="add" id="addBenefit">+ Add benefit</button>
       </div>
     </section>
 
@@ -423,8 +407,8 @@ table.rows input,table.rows select,table.rows textarea{padding:6px 8px;font-size
   <!-- RAIL -->
   <aside class="rail">
     <div class="ledger">
-      <h3>Ambiguity ledger</h3>
-      <p class="sub">Questions still unanswered. Each one left blank will be answered by an engineer with a guess.</p>
+      <h3>Readiness checklist</h3>
+      <p class="sub">A live view of what this BRD still leaves open. Anything left blank has to be decided later, so it is better settled here.</p>
       <div class="score" id="score">0<small> / 0 answered</small></div>
       <div class="verdict v-block" id="verdict">NOT READY</div>
       <ul class="checks" id="checks"></ul>
@@ -434,7 +418,8 @@ table.rows input,table.rows select,table.rows textarea{padding:6px 8px;font-size
       <p>Copy to Lark pastes as a table — Lark reads the markdown format on paste.</p>
       <button class="btn-solid" id="toLark2">Copy for Lark doc</button>
       <button class="btn-line" id="toPdf2">Save as PDF</button>
-      <button class="btn-line" id="toJson">Download JSON (to generate config)</button>
+      <button class="btn-line" id="toJson">Download JSON (hand-off &amp; config)</button>
+      <p class="hint" style="margin:10px 0 0">The JSON is the working file. Download it to hand the draft to the PM; they reopen it with <b>Load JSON</b>, revise, and download the approved version for config.</p>
     </div>
   </aside>
 </div>
@@ -462,7 +447,7 @@ function benefitDocRow(tbody,d={}){
   tr.querySelector('.rm').onclick=()=>{tr.remove();refresh();};
   tbody.appendChild(tr);
 }
-function benefitRow(d={}){
+function benefitRow(container,d={}){
   const bb=document.createElement('div');
   bb.className='benefit-block';
   bb.innerHTML=`
@@ -483,37 +468,34 @@ function benefitRow(d={}){
     </div>
     <button type="button" class="rm-benefit">Remove benefit</button>`;
   const tbody=bb.querySelector('.bdoc-rows');
-  const docs=(d.docs&&d.docs.length)?d.docs:[{}];
-  docs.forEach(x=>benefitDocRow(tbody,x));
+  ((d.docs&&d.docs.length)?d.docs:[{}]).forEach(x=>benefitDocRow(tbody,x));
   bb.querySelector('.bb-add-doc').onclick=()=>{benefitDocRow(tbody);refresh();};
   bb.querySelector('.rm-benefit').onclick=()=>{bb.remove();refresh();};
-  bb.oninput=refresh; bb.onchange=refresh;
-  $('benefitList').appendChild(bb);
+  container.appendChild(bb);
 }
 function notifRow(d={}){
-  const yn=v=>`<select class="n-${v.k}"><option value="">—</option><option${d[v.k]==='Yes'?' selected':''}>Yes</option><option${d[v.k]==='No'?' selected':''}>No</option></select>`;
+  const yn=(cls,v)=>`<select class="${cls}"><option value="">—</option><option${v==='Yes'?' selected':''}>Yes</option><option${v==='No'?' selected':''}>No</option></select>`;
   const tr=document.createElement('tr');
   tr.innerHTML=`<td><input type="text" class="n-event" value="${d.event||''}"></td>
-  <td>${yn({k:'email'})}</td><td>${yn({k:'wa'})}</td><td>${yn({k:'sms'})}</td>
+  <td>${yn('n-email',d.email)}</td><td>${yn('n-wa',d.wa)}</td><td>${yn('n-sms',d.sms)}</td>
   <td><input type="text" class="n-att" value="${d.att||''}" placeholder="COI / none"></td>
   <td><button class="rm">×</button></td>`;
   tr.querySelector('.rm').onclick=()=>{tr.remove();refresh();};
-  tr.oninput=refresh; tr.onchange=refresh;
   $('notifRows').appendChild(tr);
 }
 function reportRow(d={}){
+  const opt=(arr,v)=>arr.map(o=>`<option${o===v?' selected':''}>${o}</option>`).join('');
   const tr=document.createElement('tr');
   tr.innerHTML=`<td><input type="text" class="r-name" value="${d.name||''}"></td>
-  <td><select class="r-int"><option value="">—</option><option${d.int==='Daily'?' selected':''}>Daily</option><option${d.int==='Weekly'?' selected':''}>Weekly</option><option${d.int==='Monthly'?' selected':''}>Monthly</option></select></td>
+  <td><select class="r-int"><option value="">—</option>${opt(['Daily','Weekly','Monthly'],d.int)}</select></td>
   <td><input type="text" class="r-time" value="${d.time||''}" placeholder="08:00"></td>
-  <td><select class="r-ch"><option value="">—</option><option${d.ch==='SFTP'?' selected':''}>SFTP</option><option${d.ch==='Email'?' selected':''}>Email</option></select></td>
+  <td><select class="r-ch"><option value="">—</option>${opt(['SFTP','Email','API'],d.ch)}</select></td>
   <td><input type="text" class="r-to" value="${d.to||''}"></td>
   <td><button class="rm">×</button></td>`;
   tr.querySelector('.rm').onclick=()=>{tr.remove();refresh();};
-  tr.oninput=refresh; tr.onchange=refresh;
   $('reportRows').appendChild(tr);
 }
-function premTierRow(d={}){
+function planTierRow(tbody,d={}){
   const tr=document.createElement('tr');
   tr.innerHTML=`<td><input type="text" class="t-label" value="${d.label||''}" placeholder="Range A / SKU"></td>
   <td><input type="number" class="t-from" value="${d.from??''}" placeholder="0"></td>
@@ -523,36 +505,115 @@ function premTierRow(d={}){
   <td><select class="t-vtype"><option${d.vtype!=='%'?' selected':''}>fixed</option><option${d.vtype==='%'?' selected':''}>%</option></select></td>
   <td><button class="rm">×</button></td>`;
   tr.querySelector('.rm').onclick=()=>{tr.remove();refresh();};
-  tr.oninput=refresh; tr.onchange=refresh;
-  $('premTierRows').appendChild(tr);
+  tbody.appendChild(tr);
+}
+const METHODS=['Fixed','Percentage of a base','Tiered'];
+function planRow(d={}){
+  const pb=document.createElement('div');
+  pb.className='plan-block';
+  const opt=(arr,v)=>arr.map(o=>`<option${o===v?' selected':''}>${o}</option>`).join('');
+  pb.innerHTML=`
+    <div class="plan-head">
+      <span class="plan-tag plan-idx">Plan</span>
+      <div class="field p-name-wrap"><label>Package / plan name<span class="req">*</span></label><input type="text" class="p-name" value="${d.name||''}" placeholder="Plan 1"></div>
+      <div class="field p-code-wrap"><label>Package code</label><input type="text" class="p-code" value="${d.code||''}" placeholder="PM fills this later"></div>
+      <div class="field p-status-wrap"><label>Status</label><select class="p-status"><option value="">—</option><option${d.status==='Active'?' selected':''}>Active</option><option${d.status==='Deactivated'?' selected':''}>Deactivated</option></select></div>
+      <button type="button" class="rm-plan">Remove</button>
+    </div>
+
+    <div class="plan-grid">
+      <div class="field"><label>Premium method<span class="req">*</span></label>
+        <select class="p-method"><option value="">— select —</option>${opt(METHODS,d.method)}</select></div>
+      <div class="field"><label>Max TSI<span class="req">*</span> <span class="why">sum insured cap</span></label><input type="number" class="p-tsi" value="${d.tsi||''}"></div>
+      <div class="field"><label>Min age<span class="req">*</span></label><input type="number" class="p-minage" value="${d.minAge||''}"></div>
+      <div class="field"><label>Max age<span class="req">*</span></label><input type="number" class="p-maxage" value="${d.maxAge||''}"></div>
+    </div>
+
+    <div class="subpanel hidden plan-sub pp-fixed">
+      <div class="field"><label>Fixed premium amount<span class="req">*</span></label><input type="number" class="p-fixed" value="${d.fixed||''}"></div>
+    </div>
+
+    <div class="subpanel hidden plan-sub pp-pct">
+      <div class="grid3">
+        <div class="field"><label>Rate (%)<span class="req">*</span></label><input type="number" class="p-rate" step="0.01" value="${d.rate||''}" placeholder="1.5"></div>
+        <div class="field"><label>Applied to (base)<span class="req">*</span></label>
+          <select class="p-base"><option value="">— select —</option>${opt(['Max TSI','Product / item price','Loan / financing amount','Coverage amount','Custom parameter'],d.base)}</select></div>
+        <div class="field"><label>Custom base name <span class="why">only if "Custom parameter"</span></label><input type="text" class="p-basecustom" value="${d.baseCustom||''}"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Floor / min premium <span class="why">optional</span></label><input type="number" class="p-floor" value="${d.floor||''}"></div>
+        <div class="field"><label>Cap / max premium <span class="why">optional</span></label><input type="number" class="p-cap" value="${d.cap||''}"></div>
+      </div>
+      <div class="precedent">A percentage with no floor lets a tiny base produce a premium of a few units that the provider will reject at settlement. Always ask whether a floor/cap exists.</div>
+    </div>
+
+    <div class="subpanel hidden plan-sub pp-tier">
+      <div class="field"><label>Ranges are based on<span class="req">*</span> <span class="why">the value that decides which range applies</span></label>
+        <select class="p-driver"><option value="">— select —</option>${opt(['Product / item price','Max TSI','Loan / financing amount','Age','Coverage days','SKU / plan'],d.driver)}</select></div>
+      <table class="rows">
+        <thead><tr><th style="width:20%">Label / SKU</th><th style="width:14%">From</th><th style="width:14%">To</th><th style="width:17%">TSI (optional)</th><th style="width:15%">Value</th><th style="width:14%">Value type</th><th></th></tr></thead>
+        <tbody class="p-tier-rows"></tbody>
+      </table>
+      <button type="button" class="add p-add-tier">+ Add range</button>
+      <div class="tierflag good p-tierflag" style="display:none"></div>
+    </div>
+
+    <div class="sim plan-sub">
+      <h4>Premium simulator <span class="opt">— optional check, not part of the BRD output</span></h4>
+      <p class="hint" style="margin:0 0 10px">Not saved to the BRD. Enter a value to see the premium this plan produces; handy for testing range edges (try 5000 vs 5001).</p>
+      <div class="grid2">
+        <div class="field" style="margin:0"><label>Sample value <span class="why">e.g. item price, loan, TSI, or age</span></label><input type="number" class="p-sim-driver" placeholder="5000"></div>
+        <div class="field" style="margin:0"><label>Number of insured</label><input type="number" class="p-sim-units" placeholder="1"></div>
+      </div>
+      <div class="out p-sim-out">Pick a premium method and run a value to see the result.</div>
+    </div>
+
+    <div class="plan-benefits">
+      <div class="plan-benefits-label">Claim benefits for this plan <span class="why">each benefit carries its own deductible, claim limit, and required documents</span></div>
+      <div class="p-benefits"></div>
+      <button type="button" class="add p-add-benefit">+ Add benefit</button>
+    </div>`;
+  const tbody=pb.querySelector('.p-tier-rows');
+  ((d.tiers&&d.tiers.length)?d.tiers:[{}]).forEach(x=>planTierRow(tbody,x));
+  const bcont=pb.querySelector('.p-benefits');
+  ((d.benefits&&d.benefits.length)?d.benefits:[{}]).forEach(x=>benefitRow(bcont,x));
+  pb.querySelector('.p-add-tier').onclick=()=>{planTierRow(tbody);refresh();};
+  pb.querySelector('.p-add-benefit').onclick=()=>{benefitRow(bcont);refresh();};
+  pb.querySelector('.rm-plan').onclick=()=>{pb.remove();refresh();};
+  $('planList').appendChild(pb);
 }
 
 const readRows=(sel,map)=>[...document.querySelectorAll(sel)].map(map);
-const benefits=()=>[...document.querySelectorAll('#benefitList .benefit-block')].map(bb=>({
-  name:bb.querySelector('.b-name').value.trim(),
-  group:bb.querySelector('.b-group').value.trim(),
-  ded:bb.querySelector('.b-ded').value.trim(),
-  multi:bb.querySelector('.b-multi').value,
-  max:bb.querySelector('.b-max').value.trim(),
-  docs:[...bb.querySelectorAll('.bdoc-rows tr')].map(tr=>({name:tr.querySelector('.bd-name').value.trim(),req:tr.querySelector('.bd-req').value,note:tr.querySelector('.bd-note').value.trim()})).filter(x=>x.name)
-}));
 const notifs=()=>readRows('#notifRows tr',tr=>({event:tr.querySelector('.n-event').value.trim(),email:tr.querySelector('.n-email').value,wa:tr.querySelector('.n-wa').value,sms:tr.querySelector('.n-sms').value,att:tr.querySelector('.n-att').value.trim()}));
 const reports=()=>readRows('#reportRows tr',tr=>({name:tr.querySelector('.r-name').value.trim(),int:tr.querySelector('.r-int').value,time:tr.querySelector('.r-time').value.trim(),ch:tr.querySelector('.r-ch').value,to:tr.querySelector('.r-to').value.trim()}));
-const tiers=()=>readRows('#premTierRows tr',tr=>({
-  label:tr.querySelector('.t-label').value.trim(),
-  from:tr.querySelector('.t-from').value.trim(),
-  to:tr.querySelector('.t-to').value.trim(),
-  tsi:tr.querySelector('.t-tsi').value.trim(),
-  value:tr.querySelector('.t-val').value.trim(),
-  vtype:tr.querySelector('.t-vtype').value
+const gv=(el,cls)=>{const n=el.querySelector(cls);return n?n.value.trim():'';};
+const benefitsIn=el=>[...el.querySelectorAll('.p-benefits .benefit-block')].map(bb=>({
+  name:gv(bb,'.b-name'),group:gv(bb,'.b-group'),ded:gv(bb,'.b-ded'),multi:gv(bb,'.b-multi'),max:gv(bb,'.b-max'),
+  docs:[...bb.querySelectorAll('.bdoc-rows tr')].map(tr=>({name:gv(tr,'.bd-name'),req:gv(tr,'.bd-req'),note:gv(tr,'.bd-note')})).filter(x=>x.name)
+}));
+const plans=()=>[...document.querySelectorAll('#planList .plan-block')].map(pb=>({
+  el:pb,
+  name:gv(pb,'.p-name'),code:gv(pb,'.p-code'),status:gv(pb,'.p-status'),
+  method:gv(pb,'.p-method'),tsi:gv(pb,'.p-tsi'),minAge:gv(pb,'.p-minage'),maxAge:gv(pb,'.p-maxage'),
+  fixed:gv(pb,'.p-fixed'),rate:gv(pb,'.p-rate'),base:gv(pb,'.p-base'),baseCustom:gv(pb,'.p-basecustom'),
+  floor:gv(pb,'.p-floor'),cap:gv(pb,'.p-cap'),driver:gv(pb,'.p-driver'),
+  tiers:[...pb.querySelectorAll('.p-tier-rows tr')].map(tr=>({
+    label:gv(tr,'.t-label'),from:gv(tr,'.t-from'),to:gv(tr,'.t-to'),tsi:gv(tr,'.t-tsi'),value:gv(tr,'.t-val'),vtype:gv(tr,'.t-vtype')})),
+  benefits:benefitsIn(pb)
 }));
 
-/* ---------- premium engine ---------- */
-function showPremiumPanels(){
-  const m=val('premMethod');
-  $('panelFixed').classList.toggle('hidden',m!=='Fixed');
-  $('panelPct').classList.toggle('hidden',m!=='Percentage of a base');
-  $('panelTier').classList.toggle('hidden',m!=='Tiered');
+/* ---------- premium engine (per plan) ---------- */
+function showPlanPanels(){
+  plans().forEach(pl=>{
+    pl.el.querySelector('.pp-fixed').classList.toggle('hidden',pl.method!=='Fixed');
+    pl.el.querySelector('.pp-pct').classList.toggle('hidden',pl.method!=='Percentage of a base');
+    pl.el.querySelector('.pp-tier').classList.toggle('hidden',pl.method!=='Tiered');
+  });
+}
+function numberPlans(){
+  [...document.querySelectorAll('#planList .plan-block')].forEach((pb,i)=>{
+    const tag=pb.querySelector('.plan-idx'); if(tag) tag.textContent='Plan '+(i+1);
+  });
 }
 function roundPrem(x){
   const r=val('premRounding');
@@ -563,9 +624,9 @@ function roundPrem(x){
   if(r==='Round down to 1,000') return Math.floor(x/1000)*1000;
   return x;
 }
-/* validate tier bands: gaps / overlaps. driver treated as integer units. */
-function validateTiers(){
-  const t=tiers().filter(x=>x.from!==''&&x.to!=='').map(x=>({...x,f:+x.from,to2:+x.to}));
+/* validate tier ranges of one plan: gaps / overlaps */
+function validateTiers(tierArr){
+  const t=(tierArr||[]).filter(x=>x.from!==''&&x.to!=='').map(x=>({...x,f:+x.from,to2:+x.to}));
   const res={ok:true,msgs:[],hasRows:t.length>0};
   if(!t.length){res.ok=false;return res;}
   t.sort((a,b)=>a.f-b.f);
@@ -578,28 +639,27 @@ function validateTiers(){
   if(t[0].f>1){res.msgs.push(`Note: lowest range starts at ${t[0].f}. Are values below ${t[0].f} intentionally uncovered?`);}
   return res;
 }
-/* compute premium for a driver value + units; returns {ok,amount,detail,warn} */
-function computePremium(driver,units){
-  const m=val('premMethod'); units=units||1;
+/* compute premium for a plan; returns {ok,amount,detail,warn} */
+function computePremium(pl,driver,units){
+  units=units||1;
   const perInsured=val('premBasis').startsWith('Per insured');
   let base=null, detail='', warn='';
-  if(!m) return {ok:false,detail:'No premium method selected yet.'};
-  if(m==='Fixed'){
-    base=num('premFixed'); if(base===null) return {ok:false,detail:'Fixed amount not entered.'};
-    detail=`Fixed ${fmt(base)}`;
-  } else if(m==='Percentage of a base'){
-    const rate=num('premRate'); if(rate===null) return {ok:false,detail:'Rate not entered.'};
+  if(!pl||!pl.method) return {ok:false,detail:'No premium method selected yet.'};
+  if(pl.method==='Fixed'){
+    if(pl.fixed==='') return {ok:false,detail:'Fixed amount not entered.'};
+    base=+pl.fixed; detail=`Fixed ${fmt(base)}`;
+  } else if(pl.method==='Percentage of a base'){
+    if(pl.rate==='') return {ok:false,detail:'Rate not entered.'};
     if(driver===null) return {ok:false,detail:'Enter a sample value to simulate.'};
-    base=rate/100*driver;
-    detail=`${rate}% × ${Number(driver).toLocaleString('en-US')} = ${fmt(base)}`;
-    const fl=num('premFloor'), cp=num('premCap');
-    if(fl!==null && base<fl){base=fl;detail+=` → floored to ${fmt(fl)}`;}
-    if(cp!==null && base>cp){base=cp;detail+=` → capped at ${fmt(cp)}`;}
-  } else if(m==='Tiered'){
+    base=+pl.rate/100*driver;
+    detail=`${pl.rate}% × ${Number(driver).toLocaleString('en-US')} = ${fmt(base)}`;
+    if(pl.floor!=='' && base<+pl.floor){base=+pl.floor;detail+=` → floored to ${fmt(base)}`;}
+    if(pl.cap!=='' && base>+pl.cap){base=+pl.cap;detail+=` → capped at ${fmt(base)}`;}
+  } else if(pl.method==='Tiered'){
     if(driver===null) return {ok:false,detail:'Enter a sample value to simulate.'};
-    const t=tiers().filter(x=>x.from!==''&&x.to!==''&&x.value!=='');
+    const t=(pl.tiers||[]).filter(x=>x.from!==''&&x.to!==''&&x.value!=='');
     const hit=t.find(x=>driver>=+x.from && driver<=+x.to);
-    if(!hit){ return {ok:false,detail:`No range matches ${Number(driver).toLocaleString('en-US')}. Below the lowest / above the highest range, or a gap — define what happens here.`}; }
+    if(!hit) return {ok:false,detail:`No range matches ${Number(driver).toLocaleString('en-US')}. Below the lowest / above the highest range, or a gap — define what happens here.`};
     if(hit.vtype==='%'){ const b2=hit.tsi!==''?+hit.tsi:driver; base=+hit.value/100*b2; detail=`Range "${hit.label||hit.from+'–'+hit.to}": ${hit.value}% × ${Number(b2).toLocaleString('en-US')} = ${fmt(base)}`; }
     else { base=+hit.value; detail=`Range "${hit.label||hit.from+'–'+hit.to}": ${fmt(base)}`; }
   }
@@ -611,66 +671,102 @@ function computePremium(driver,units){
   return {ok:true,amount:amt,detail,warn};
 }
 function runSimulation(){
-  const out=$('simOut'); if(!out) return;
-  const m=val('premMethod');
-  const driver = val('simDriver')===''?null:+val('simDriver');
-  const units = val('simUnits')===''?1:+val('simUnits');
-  const r=computePremium(driver,units);
-  if(!r.ok){ out.innerHTML=`<span class="warn">▲ ${r.detail}</span>`; return; }
-  let html=`<span class="ok">Premium = ${fmt(r.amount)}</span><br><span style="color:var(--muted)">${r.detail}</span>`;
-  if(r.warn) html+=`<br><span class="warn">▲ ${r.warn}</span>`;
-  out.innerHTML=html;
+  plans().forEach(pl=>{
+    const out=pl.el.querySelector('.p-sim-out'); if(!out) return;
+    const dv=gv(pl.el,'.p-sim-driver'), uv=gv(pl.el,'.p-sim-units');
+    const r=computePremium(pl, dv===''?null:+dv, uv===''?1:+uv);
+    if(!r.ok){ out.innerHTML=`<span class="warn">▲ ${r.detail}</span>`; return; }
+    let html=`<span class="ok">Premium = ${fmt(r.amount)}</span><br><span style="color:var(--muted)">${r.detail}</span>`;
+    if(r.warn) html+=`<br><span class="warn">▲ ${r.warn}</span>`;
+    out.innerHTML=html;
+  });
 }
 function renderTierFlag(){
-  const fl=$('tierFlag'); if(!fl) return;
-  if(val('premMethod')!=='Tiered'){ fl.style.display='none'; return; }
-  const v=validateTiers();
-  if(!v.hasRows){ fl.style.display='none'; return; }
-  fl.style.display='block';
-  if(v.ok && !v.msgs.length){ fl.className='tierflag good'; fl.textContent='✓ Ranges are continuous — no gaps, no overlaps.'; }
-  else if(v.ok){ fl.className='tierflag good'; fl.innerHTML='✓ No gaps or overlaps. '+v.msgs.join(' '); }
-  else { fl.className='tierflag bad'; fl.innerHTML='✕ '+v.msgs.join('<br>✕ '); }
+  plans().forEach(pl=>{
+    const fl=pl.el.querySelector('.p-tierflag'); if(!fl) return;
+    if(pl.method!=='Tiered'){ fl.style.display='none'; return; }
+    const v=validateTiers(pl.tiers);
+    if(!v.hasRows){ fl.style.display='none'; return; }
+    fl.style.display='block';
+    if(v.ok && !v.msgs.length){ fl.className='tierflag good p-tierflag'; fl.textContent='✓ Ranges are continuous — no gaps, no overlaps.'; }
+    else if(v.ok){ fl.className='tierflag good p-tierflag'; fl.innerHTML='✓ No gaps or overlaps. '+v.msgs.join(' '); }
+    else { fl.className='tierflag bad p-tierflag'; fl.innerHTML='✕ '+v.msgs.join('<br>✕ '); }
+  });
+}
+/* cross-plan divergence — the copy-paste bugs live here */
+function planDivergence(){
+  const ps=plans().filter(p=>p.name);
+  const msgs=[];
+  if(ps.length<2) return msgs;
+  const distinct=(f)=>[...new Set(ps.map(p=>p[f]))];
+  const someBlank=(f)=>ps.some(p=>p[f]==='') && ps.some(p=>p[f]!=='');
+  const label=(f)=>ps.map(p=>`${p.name}: ${p[f]||'(blank)'}`).join(' · ');
+  if(distinct('minAge').length>1||distinct('maxAge').length>1)
+    msgs.push(`Age limits differ between plans — ${ps.map(p=>`${p.name}: ${p.minAge||'?'}–${p.maxAge||'?'}`).join(' · ')}. Confirm this is deliberate, not copy-paste.`);
+  if(someBlank('minAge')||someBlank('maxAge'))
+    msgs.push(`Some plans have age limits and others are blank. A blank is not "no limit" — it is unanswered.`);
+  if(distinct('method').length>1)
+    msgs.push(`Premium methods differ — ${label('method')}. Fine if intended, but verify.`);
+  if(someBlank('tsi'))
+    msgs.push(`Max TSI is set on some plans and blank on others — ${label('tsi')}.`);
+  const codes=ps.map(p=>p.code).filter(Boolean);
+  if(new Set(codes).size!==codes.length) msgs.push(`Duplicate package codes detected — each plan needs its own code.`);
+  const bc=[...new Set(ps.map(p=>p.benefits.filter(b=>b.name).length))];
+  if(bc.length>1) msgs.push(`Benefit counts differ across plans (${ps.map(p=>`${p.name}: ${p.benefits.filter(b=>b.name).length}`).join(' · ')}). Higher plans usually cover more — confirm.`);
+  return msgs;
+}
+function renderDivergence(){
+  const box=$('planDiverge'); if(!box) return;
+  const ps=plans().filter(p=>p.name);
+  if(ps.length<2){ box.style.display='none'; return; }
+  const m=planDivergence();
+  box.style.display='block';
+  if(!m.length){ box.className='diverge clean'; box.innerHTML='<b>Cross-plan check</b>All plans agree on age limits, premium method, and TSI. Package codes are unique.'; }
+  else { box.className='diverge'; box.innerHTML='<b>Cross-plan differences to confirm</b>'+m.map(x=>`• ${x}`).join('<br>'); }
 }
 
 /* ---------- checks ---------- */
-function premiumChecks(){
-  const m=val('premMethod'); const c=[];
-  c.push(['Currency is set', !!val('premCurrency')]);
-  c.push(['Premium method is defined', !!m]);
-  c.push(['Max TSI is defined', !!val('tsi') || (m==='Tiered' && tiers().length>0 && tiers().every(x=>x.tsi!==''))]);
-  if(m==='Fixed') c.push(['Fixed premium amount entered', !!val('premFixed')]);
-  if(m==='Percentage of a base') c.push(['Rate and base parameter defined', !!(val('premRate')&&val('premBase'))]);
-  if(m==='Tiered'){
-    const t=tiers();
-    c.push(['Every tier has from / to / value', t.length>0 && t.every(x=>x.from!==''&&x.to!==''&&x.value!=='')]);
-    c.push(['Tiers have no gaps or overlaps', validateTiers().ok]);
-    c.push(['Range basis is defined', !!val('premDriver')]);
-  }
-  c.push(['Premium basis (per policy vs per insured) answered', !!val('premBasis')]);
-  c.push(['Gross vs net premium is stated', !!val('premGrossNet')]);
-  c.push(['Rounding rule is defined', !!val('premRounding')]);
+function planChecks(){
+  const ps=plans(); const c=[];
+  const named=ps.filter(p=>p.name);
+  c.push(['At least one plan / package defined', named.length>0]);
+  c.push(['No blank plan blocks left behind', ps.length>0 && ps.every(p=>p.name)]);
+  c.push(['Every plan has a premium method', named.length>0 && named.every(p=>p.method)]);
+  c.push(['Every plan has its premium amount filled', named.length>0 && named.every(p=>{
+    if(p.method==='Fixed') return p.fixed!=='';
+    if(p.method==='Percentage of a base') return p.rate!=='' && p.base!=='';
+    if(p.method==='Tiered') return p.driver!=='' && p.tiers.filter(t=>t.from!==''&&t.to!==''&&t.value!=='').length>0;
+    return false;})]);
+  c.push(['Every tiered plan has valid ranges (no gaps/overlaps)',
+    named.filter(p=>p.method==='Tiered').every(p=>validateTiers(p.tiers).ok)]);
+  c.push(['Every plan defines Max TSI', named.length>0 && named.every(p=>p.tsi!=='' || (p.method==='Tiered'&&p.tiers.length>0&&p.tiers.every(t=>t.tsi!=='')))]);
+  c.push(['Every plan defines min & max age', val('ageIncl')==='No age limit' || (named.length>0 && named.every(p=>p.minAge!==''&&p.maxAge!==''&&(+p.minAge< +p.maxAge)))]);
+  const allB=named.flatMap(p=>p.benefits.filter(b=>b.name));
+  c.push(['Every plan has at least one benefit', named.length>0 && named.every(p=>p.benefits.some(b=>b.name))]);
+  c.push(['Every benefit lists its required documents', allB.length>0 && allB.every(b=>(b.docs||[]).some(d=>d.name&&d.req))]);
+  c.push(['Every benefit has deductible & claim limit', allB.length>0 && allB.every(b=>b.ded&&b.max&&b.multi)]);
   return c;
 }
 function runChecks(){
-  const b=benefits(), n=notifs(), r=reports();
+  const n=notifs(), r=reports();
   const c=[
-    ['Partner, provider, and package are named', !!(val('partnerName')&&val('provider')&&val('packageName'))],
+    ['Partner, provider, and product are named', !!(val('partnerName')&&val('provider')&&val('productName'))],
     ['Market / region is set', !!val('market')],
-    ['Jira Epic is linked', !!val('jiraEpic')],
     ['Monthly policy & claim volumes filled', !!(val('volPolicy')&&val('volClaim'))],
     ['Config reuse question answered', !!val('reuse')],
-    ...premiumChecks(),
+    ['Currency is set', !!val('premCurrency')],
+    ['Premium basis (per policy vs per insured) answered', !!val('premBasis')],
+    ['Gross vs net premium is stated', !!val('premGrossNet')],
+    ['Rounding rule is defined', !!val('premRounding')],
+    ...planChecks(),
     ['Coverage: duration, start date, end date', !!(val('coverDays')&&val('coverStart')&&val('coverEnd'))],
     ['Backdating: allowed or not', !!val('backdate')],
     ['Age bounds: inclusive or exclusive', !!val('ageIncl')],
     ['Age measured against which date', !!val('ageRef')],
-    ['Min age < max age', val('ageIncl')==='No age limit' || (!!val('minAge')&&!!val('maxAge')&&(+val('minAge') < +val('maxAge')))],
     ['Uniqueness key & active-policy limit', !!(val('uniqKey')&&val('maxActive'))],
     ['Upload template fields defined', val('uploadFields').split('\n').filter(x=>x.trim()).length>0],
     ['Claim: SLA, initiation limit, document limit', !!(val('claimSla')&&val('claimInitDays')&&val('claimDocDays'))],
     ['Auto-reject rules defined', val('autoReject').split('\n').filter(x=>x.trim()).length>0],
-    ['Every benefit lists its required documents', b.length>0 && b.every(x=>x.name && (x.docs||[]).some(d=>d.name&&d.req))],
-    ['Every benefit has deductible & claim limit', b.length>0 && b.every(x=>x.name&&x.ded&&x.max&&x.multi)],
     ['At least one notification event configured', n.length>0 && n.every(x=>x.event&&x.email)],
     ['Report & recon date defined', r.length>0 && !!val('reconDate')],
   ];
@@ -680,7 +776,7 @@ function runChecks(){
   $('score').innerHTML=`${pass}<small> / ${c.length} answered</small>`;
   const v=$('verdict');
   if(pass===c.length){v.className='verdict v-ready';v.textContent='READY TO BUILD';}
-  else{v.className='verdict v-block';v.textContent=`${c.length-pass} QUESTIONS UNANSWERED`;}
+  else{v.className='verdict v-block';v.textContent=`${c.length-pass} STILL OPEN`;}
   return {pass,total:c.length,checks:c};
 }
 
@@ -688,58 +784,75 @@ function runChecks(){
 function qaMatrix(){
   const t=[]; let i=1;
   const id=()=>'T-'+String(i++).padStart(2,'0');
-  const incl=val('ageIncl'), ref=val('ageRef'), mn=val('minAge'), mx=val('maxAge');
-  if(incl && incl!=='No age limit' && mn && mx){
-    const inclusive = incl.startsWith('Yes');
-    t.push([id(),'Age exactly at minimum bound',`DOB = exactly ${mn} years on ${ref||'reference date'}`, inclusive?'Policy issued':'Rejected']);
-    t.push([id(),'Age one day below minimum',`DOB = ${mn} years minus 1 day`,'Rejected']);
-    t.push([id(),'Age exactly at maximum bound',`DOB = exactly ${mx} years on ${ref||'reference date'}`, inclusive?'Policy issued':'Rejected']);
-    t.push([id(),'Age one day above maximum',`DOB = ${mx} years plus 1 day`,'Rejected']);
-    if(ref) t.push([id(),'Age computed from the wrong date',`Eligible if computed from another date, not eligible from ${ref}`,`Rejected — ${ref} governs`]);
-  } else {
-    t.push(['—','Age boundary cannot be generated','Age bounds / reference date not answered','—']);
+  const incl=val('ageIncl'), ref=val('ageRef');
+  const ps=plans().filter(p=>p.name);
+
+  /* per-plan cases */
+  ps.forEach(p=>{
+    const tag=p.name;
+    if(incl && incl!=='No age limit' && p.minAge!=='' && p.maxAge!==''){
+      const inclusive=incl.startsWith('Yes');
+      t.push([id(),`Age at minimum bound — ${tag}`,`DOB = exactly ${p.minAge} years on ${ref||'reference date'}`, inclusive?'Policy issued':'Rejected']);
+      t.push([id(),`Age one day below minimum — ${tag}`,`DOB = ${p.minAge} years minus 1 day`,'Rejected']);
+      t.push([id(),`Age at maximum bound — ${tag}`,`DOB = exactly ${p.maxAge} years on ${ref||'reference date'}`, inclusive?'Policy issued':'Rejected']);
+      t.push([id(),`Age one day above maximum — ${tag}`,`DOB = ${p.maxAge} years plus 1 day`,'Rejected']);
+    }
+    if(p.method==='Fixed' && p.fixed!==''){
+      const r=computePremium(p,null,1);
+      t.push([id(),`Premium charged matches config — ${tag}`,`Buy plan ${p.code||tag}`,`Premium = ${r.ok?fmt(r.amount):fmt(+p.fixed)}`]);
+    }
+    if(p.method==='Percentage of a base' && p.rate!=='' && p.base!==''){
+      const base=p.base==='Custom parameter'?(p.baseCustom||'the base'):p.base.toLowerCase();
+      t.push([id(),`Premium = rate × base — ${tag}`,`Sample ${base} value`,`${p.rate}% of that value${p.floor!==''?', floored at '+fmt(+p.floor):''}${p.cap!==''?', capped at '+fmt(+p.cap):''}`]);
+      if(p.floor!=='') t.push([id(),`Base hits the floor — ${tag}`,`Very small ${base}`,`Premium = floor ${fmt(+p.floor)}`]);
+      if(p.cap!=='') t.push([id(),`Base hits the cap — ${tag}`,`Very large ${base}`,`Premium = cap ${fmt(+p.cap)}`]);
+    }
+    if(p.method==='Tiered'){
+      const bands=p.tiers.filter(x=>x.from!==''&&x.to!==''&&x.value!=='').map(x=>({...x,f:+x.from,to2:+x.to})).sort((a,b)=>a.f-b.f);
+      bands.forEach(x=>{
+        const r=computePremium(p,x.f,1);
+        t.push([id(),`Range "${x.label||x.from+'–'+x.to}" low edge — ${tag}`,`${p.driver||'Value'} = ${x.f}`, r.ok?`Premium = ${fmt(r.amount)}`:'define range value']);
+      });
+      for(let k=0;k<bands.length-1;k++){
+        const edge=bands[k].to2;
+        const r1=computePremium(p,edge,1), r2=computePremium(p,edge+1,1);
+        t.push([id(),`Boundary at ${edge} / ${edge+1} — ${tag}`,`Value = ${edge} vs ${edge+1}`,`${r1.ok?fmt(r1.amount):'?'} then ${r2.ok?fmt(r2.amount):'?'} — the off-by-one to verify`]);
+      }
+      if(bands.length){
+        t.push([id(),`Value below the lowest range — ${tag}`,`Value = ${bands[0].f-1}`,'Undefined — BRD must state reject / clamp']);
+        t.push([id(),`Value above the highest range — ${tag}`,`Value = ${bands[bands.length-1].to2+1}`,'Undefined — BRD must state reject / clamp']);
+      }
+    }
+    if(val('premBasis').startsWith('Per insured')){
+      const dv=gv(p.el,'.p-sim-driver');
+      const r1=computePremium(p,dv===''?null:+dv,1), r2=computePremium(p,dv===''?null:+dv,2);
+      if(r1.ok&&r2.ok) t.push([id(),`Premium scales with insured count — ${tag}`,'1 insured vs 2 insured',`${fmt(r1.amount)} then ${fmt(r2.amount)}`]);
+    }
+    p.benefits.filter(b=>b.name).forEach(b=>{
+      if(b.ded) t.push([id(),`Deductible — ${tag} / ${b.name}`,'File a claim on this benefit',`Deduction applied: ${b.ded}`]);
+      if(b.multi==='No') t.push([id(),`Second claim rejected — ${tag} / ${b.name}`,'File a second claim on the same benefit','Rejected (multi-claim = no)']);
+      const md=(b.docs||[]).filter(d=>d.name&&d.req==='Mandatory');
+      if(md.length) t.push([id(),`Missing mandatory document — ${tag} / ${b.name}`,`Claim without: ${md[0].name}`,'Held / rejected until provided']);
+    });
+  });
+
+  /* cross-plan */
+  if(ps.length>1){
+    t.push([id(),'Plan selection maps to the right config',`Buy each plan: ${ps.map(p=>p.code||p.name).join(', ')}`,'Each policy carries its own premium, TSI, age limits, and benefits']);
+    const withAge=ps.filter(p=>p.minAge!=='');
+    if(withAge.length>1 && new Set(withAge.map(p=>p.minAge)).size>1){
+      const lo=withAge.reduce((a,b)=>+a.minAge<=+b.minAge?a:b), hi=withAge.reduce((a,b)=>+a.minAge>=+b.minAge?a:b);
+      t.push([id(),'Age accepted on one plan must be rejected on another',`Insured aged ${lo.minAge} buys ${hi.name}`,`Rejected — ${hi.name} starts at ${hi.minAge}, only ${lo.name} allows ${lo.minAge}`]);
+    }
   }
+
+  /* shared cases */
   if(val('coverDays')&&val('coverStart')&&val('coverEnd'))
     t.push([id(),'Coverage window per configuration',`Buy policy, start from ${val('coverStart').toLowerCase()}`,`Ends ${val('coverDays')} days later, ${val('coverEnd').toLowerCase()}`]);
   if(val('backdate')&&val('backdate')!=='No')
-    t.push([id(),'Backdate at the maximum bound',`Invoice backdated to the limit`,'Policy issued, coverage per rule']);
+    t.push([id(),'Backdate at the maximum bound','Invoice backdated to the limit','Policy issued, coverage per rule']);
   if(val('backdate'))
     t.push([id(),'Backdate beyond the bound','Invoice backdated past the limit','Rejected']);
-
-  /* premium boundary cases */
-  const pm=val('premMethod');
-  if(pm==='Fixed' && val('premFixed')){
-    const r=computePremium(null,1);
-    t.push([id(),'Premium charged matches config','Buy policy',`Premium = ${r.ok?fmt(r.amount):fmt(+val('premFixed'))}`]);
-  }
-  if(pm==='Percentage of a base' && val('premRate') && val('premBase')){
-    const base=val('premBase')==='Custom parameter'?(val('premBaseCustom')||'the base'):val('premBase').toLowerCase();
-    t.push([id(),'Premium = rate × base',`Sample ${base} value`,`${val('premRate')}% of that value${val('premFloor')?', floored at '+fmt(+val('premFloor')):''}${val('premCap')?', capped at '+fmt(+val('premCap')):''}`]);
-    if(val('premFloor')) t.push([id(),'Base small enough to hit the floor',`Very small ${base}`,`Premium = floor ${fmt(+val('premFloor'))}`]);
-    if(val('premCap')) t.push([id(),'Base large enough to hit the cap',`Very large ${base}`,`Premium = cap ${fmt(+val('premCap'))}`]);
-  }
-  if(pm==='Tiered'){
-    const bands=tiers().filter(x=>x.from!==''&&x.to!==''&&x.value!=='').map(x=>({...x,f:+x.from,to2:+x.to})).sort((a,b)=>a.f-b.f);
-    bands.forEach(x=>{
-      const r=computePremium(x.f,1);
-      t.push([id(),`Range "${x.label||x.from+'–'+x.to}" — low edge`,`${val('premDriver')||'Value'} = ${x.f}`, r.ok?`Premium = ${fmt(r.amount)}`:'define range value']);
-    });
-    for(let k=0;k<bands.length-1;k++){
-      const edge=bands[k].to2;
-      const r1=computePremium(edge,1), r2=computePremium(edge+1,1);
-      t.push([id(),`Boundary at ${edge} / ${edge+1}`,`Value = ${edge} vs ${edge+1}`,`${r1.ok?fmt(r1.amount):'?'} then ${r2.ok?fmt(r2.amount):'?'} — the off-by-one to verify`]);
-    }
-    if(bands.length){
-      t.push([id(),'Value below the lowest range',`Value = ${bands[0].f-1}`,'Undefined — BRD must state reject / clamp']);
-      t.push([id(),'Value above the highest range',`Value = ${bands[bands.length-1].to2+1}`,'Undefined — BRD must state reject / clamp']);
-    }
-  }
-  if(val('premBasis').startsWith('Per insured')){
-    const r1=computePremium(val('simDriver')===''?null:+val('simDriver'),1);
-    const r2=computePremium(val('simDriver')===''?null:+val('simDriver'),2);
-    if(r1.ok&&r2.ok) t.push([id(),'Premium scales with number of insured','1 insured vs 2 insured',`${fmt(r1.amount)} then ${fmt(r2.amount)}`]);
-  }
-
   if(val('uniqKey')&&val('maxActive'))
     t.push([id(),'Duplicate policy on the same key',`Buy twice with the same ${val('uniqKey')}`,`Purchase #${+val('maxActive')+1} is rejected`]);
   if(val('claimInitDays')){
@@ -747,12 +860,6 @@ function qaMatrix(){
     t.push([id(),'Claim past the initiation limit',`File on day ${+val('claimInitDays')+1}`,'Auto-reject']);
   }
   t.push([id(),'Claim for an incident before policy start','Incident date < policy start date','Auto-reject']);
-  benefits().filter(b=>b.name).forEach(b=>{
-    if(b.ded) t.push([id(),`Deductible — ${b.name}`,`File a claim on this benefit`,`Deduction applied: ${b.ded}`]);
-    if(b.multi==='No') t.push([id(),`Second claim rejected — ${b.name}`,'File a second claim on the same benefit','Rejected (multi-claim = no)']);
-    const md=(b.docs||[]).filter(d=>d.name&&d.req==='Mandatory');
-    if(md.length) t.push([id(),`Missing mandatory document — ${b.name}`,`Claim on "${b.name}" without: ${md[0].name}`,'Held / rejected until the document is provided']);
-  });
   notifs().filter(n=>n.event&&n.email==='Yes').forEach(n=>
     t.push([id(),`Email notification — ${n.event}`,`Trigger event ${n.event}`,`Email sent${n.att?', attachment: '+n.att:''}`]));
   if(val('volPolicy'))
@@ -764,49 +871,51 @@ function qaMatrix(){
   return t;
 }
 
-/* ---------- premium markdown block ---------- */
-function premiumMarkdown(){
-  const m=val('premMethod');
-  const rows=[];
-  const row=(k,v)=>`| ${k} | ${v} |`;
-  rows.push(row('Currency',or(val('premCurrency'),'currency')));
-  rows.push(row('Method',or(m,'premium method')));
-  rows.push(row('Max TSI',val('tsi')?fmt(+val('tsi')):'*UNANSWERED — TSI*'));
-  if(m==='Fixed') rows.push(row('Fixed amount',val('premFixed')?fmt(+val('premFixed')):'*UNANSWERED — amount*'));
-  if(m==='Percentage of a base'){
-    rows.push(row('Rate',val('premRate')?val('premRate')+'%':'*UNANSWERED — rate*'));
-    rows.push(row('Applied to',or(val('premBase')==='Custom parameter'?val('premBaseCustom'):val('premBase'),'base parameter')));
-    rows.push(row('Floor / Cap',(val('premFloor')?fmt(+val('premFloor')):'none')+' / '+(val('premCap')?fmt(+val('premCap')):'none')));
-  }
-  rows.push(row('Premium basis',or(val('premBasis'),'per policy / per insured')));
-  rows.push(row('Gross vs net',or(val('premGrossNet'),'gross/net')));
-  rows.push(row('Rounding',or(val('premRounding'),'rounding rule')));
-  rows.push(row('PasarPolis commission',val('commPP')?val('commPP')+'%':'*UNANSWERED*'));
-  rows.push(row('Partner commission',val('commPartner')?val('commPartner')+'%':'*UNANSWERED*'));
-  let md='| Field | Value |\n|---|---|\n'+rows.join('\n');
-  if(m==='Tiered'){
-    const t=tiers();
-    md+=`\n\n**Range table** — ranges based on: ${or(val('premDriver'),'the base value')}\n\n| Label / SKU | From | To | TSI | Value | Type |\n|---|---|---|---|---|---|\n`;
-    md+= t.length? t.map(x=>`| ${x.label||'—'} | ${x.from||'—'} | ${x.to||'—'} | ${x.tsi||'—'} | ${x.value||'*empty*'} | ${x.vtype} |`).join('\n') : '| *UNANSWERED — no tiers* | | | | | |';
-    const v=validateTiers();
-    if(v.hasRows && !v.ok) md+='\n\n> ⚠ Tier validation FAILED: '+v.msgs.join(' ');
-    else if(v.hasRows) md+='\n\n> ✓ Tiers continuous — no gaps or overlaps.';
-  }
-  return md;
-}
-
 /* ---------- markdown ---------- */
 const or = (v,label) => v ? v : `*UNANSWERED — ${label}*`;
-function markdown(){
-  const b=benefits(), n=notifs(), r=reports(), t=qaMatrix(), ck=runChecks();
+function planMarkdown(p,idx){
   const row=(k,v)=>`| ${k} | ${v} |`;
-  let m = `# BRD — ${or(val('packageName'),'package name')}\n\n`;
-  m += `**Partner:** ${or(val('partnerName'),'partner')} · **Provider:** ${or(val('provider'),'provider')} · **Market:** ${or(val('market'),'market')} · **Target release:** ${or(val('targetRelease'),'target release')}\n\n`;
+  let m=`\n\n### 5.${idx} ${p.name||'(unnamed plan)'}${p.code?` — \`${p.code}\``:''}${p.status==='Deactivated'?' *(deactivated)*':''}\n\n| Field | Value |\n|---|---|\n`;
+  const rows=[row('Package code',or(p.code,'package code')),row('Status',or(p.status,'status')),
+    row('Premium method',or(p.method,'premium method')),
+    row('Max TSI',p.tsi!==''?fmt(+p.tsi):'*UNANSWERED — TSI*'),
+    row('Age limits',(p.minAge!==''&&p.maxAge!=='')?`${p.minAge}–${p.maxAge}`:'*UNANSWERED — age limits*')];
+  if(p.method==='Fixed') rows.push(row('Fixed amount',p.fixed!==''?fmt(+p.fixed):'*UNANSWERED — amount*'));
+  if(p.method==='Percentage of a base'){
+    rows.push(row('Rate',p.rate!==''?p.rate+'%':'*UNANSWERED — rate*'));
+    rows.push(row('Applied to',or(p.base==='Custom parameter'?p.baseCustom:p.base,'base parameter')));
+    rows.push(row('Floor / Cap',(p.floor!==''?fmt(+p.floor):'none')+' / '+(p.cap!==''?fmt(+p.cap):'none')));
+  }
+  m+=rows.join('\n');
+  if(p.method==='Tiered'){
+    m+=`\n\n**Range table** — ranges based on: ${or(p.driver,'the base value')}\n\n| Label / SKU | From | To | TSI | Value | Type |\n|---|---|---|---|---|---|\n`;
+    m+= p.tiers.length? p.tiers.map(x=>`| ${x.label||'—'} | ${x.from||'—'} | ${x.to||'—'} | ${x.tsi||'—'} | ${x.value||'*empty*'} | ${x.vtype} |`).join('\n') : '| *UNANSWERED — no ranges* | | | | | |';
+    const v=validateTiers(p.tiers);
+    if(v.hasRows && !v.ok) m+='\n\n> ⚠ Range validation FAILED: '+v.msgs.join(' ');
+    else if(v.hasRows) m+='\n\n> ✓ Ranges continuous — no gaps or overlaps.';
+  }
+  const bs=p.benefits.filter(b=>b.name);
+  m+=`\n\n**Claim benefits & required documents**\n\n`;
+  if(!bs.length) m+=`*UNANSWERED — no benefits defined for this plan*\n`;
+  else bs.forEach(b=>{
+    m+=`\n*${b.name}* — group: ${b.group||'—'} · deductible: ${b.ded||'*empty*'} · multi claim: ${b.multi||'*empty*'} · max claims: ${b.max||'*empty*'}\n\n`;
+    const ds=(b.docs||[]).filter(d=>d.name);
+    m+= ds.length? `| Document | Mandatory? | Notes |\n|---|---|---|\n`+ds.map(d=>`| ${d.name} | ${d.req||'*empty*'} | ${d.note||'—'} |`).join('\n')+'\n'
+      : `*UNANSWERED — documents for this benefit*\n`;
+  });
+  return m;
+}
+function markdown(){
+  const n=notifs(), r=reports(), ps=plans(), t=qaMatrix(), ck=runChecks();
+  const row=(k,v)=>`| ${k} | ${v} |`;
+  let m = `# BRD — ${or(val('productName'),'product name')}\n\n`;
+  m += `**Partner:** ${or(val('partnerName'),'partner')} · **Provider:** ${or(val('provider'),'provider')} · **Market:** ${or(val('market'),'market')} · **Plans:** ${ps.filter(p=>p.name).length||'*none*'} · **Target release:** ${or(val('targetRelease'),'target release')}\n\n`;
+  m += `**Status:** ${or(val('docStatus'),'status')} · **Version:** ${or(val('docVersion'),'version')} · **Prepared by:** ${or(val('preparedBy'),'partner PIC')} · **Reviewed by:** ${or(val('reviewedBy'),'PM')}\n\n`;
   m += `> Readiness: **${ck.pass}/${ck.total}** questions answered. ${ck.pass===ck.total?'Ready to build.':'Not ready — open questions remain below.'}\n\n`;
 
   m += `## 1. Partner identity\n\n| Field | Value |\n|---|---|\n`;
   m += [row('Partner name',or(val('partnerName'),'partner')),row('Insurance provider',or(val('provider'),'provider')),
-        row('Product name',or(val('productName'),'product')),row('Package name',or(val('packageName'),'package')),
+        row('Product name',or(val('productName'),'product')),
         row('Market / region',or(val('market'),'market')),row('Content locales',or(val('locales'),'locales')),
         row('Jira Epic',or(val('jiraEpic'),'epic')),row('Target release',or(val('targetRelease'),'date')),
         row('Business owner',or(val('bizOwner'),'PIC')),row('Product owner',or(val('prodOwner'),'PIC')),
@@ -826,7 +935,6 @@ function markdown(){
         row('Coverage period',val('coverDays')?val('coverDays')+' days':'*UNANSWERED — duration*'),
         row('Coverage starts',or(val('coverStart'),'start date')),row('Coverage ends',or(val('coverEnd'),'end date')),
         row('Backdate',or(val('backdate'),'backdate rule')),
-        row('**Min age**',or(val('minAge'),'min age')),row('**Max age**',or(val('maxAge'),'max age')),
         row('**Age bounds inclusive?**',or(val('ageIncl'),'inclusive/exclusive')),
         row('**Age measured against**',or(val('ageRef'),'age reference date')),
         row('Cancellation',or(val('cancel'),'cancellation')),row('Renewable',or(val('renew'),'renewable')),
@@ -837,9 +945,24 @@ function markdown(){
   m += `\n\n**Partner upload template fields**\n\n`;
   m += uf.length?uf.map(x=>`- ${x.trim()}`).join('\n'):`*UNANSWERED — upload template fields*`;
 
-  m += `\n\n## 4. Premium & pricing\n\n`+premiumMarkdown();
+  m += `\n\n## 4. Premium — shared settings\n\n| Field | Value |\n|---|---|\n`;
+  m += [row('Currency',or(val('premCurrency'),'currency')),row('Premium basis',or(val('premBasis'),'per policy / per insured')),
+        row('Gross vs net',or(val('premGrossNet'),'gross/net')),row('Rounding',or(val('premRounding'),'rounding rule')),
+        row('PasarPolis commission',val('commPP')?val('commPP')+'%':'*UNANSWERED*'),
+        row('Partner commission',val('commPartner')?val('commPartner')+'%':'*UNANSWERED*')].join('\n');
 
-  m += `\n\n## 5. Claim spec\n\n| Field | Value |\n|---|---|\n`;
+  m += `\n\n## 5. Plans / packages\n`;
+  const named=ps.filter(p=>p.name);
+  if(!named.length) m += `\n*UNANSWERED — no plans defined*\n`;
+  else {
+    m += `\n| # | Plan | Code | Method | Max TSI | Age | Benefits |\n|---|---|---|---|---|---|---|\n`;
+    m += named.map((p,i)=>`| ${i+1} | ${p.name} | ${p.code||'—'} | ${p.method||'*empty*'} | ${p.tsi!==''?fmt(+p.tsi):'*empty*'} | ${(p.minAge!==''&&p.maxAge!=='')?p.minAge+'–'+p.maxAge:'*empty*'} | ${p.benefits.filter(b=>b.name).length} |`).join('\n');
+    const dv=planDivergence();
+    if(dv.length) m += `\n\n> ⚠ Cross-plan differences to confirm:\n> `+dv.map(x=>`- ${x}`).join('\n> ');
+    named.forEach((p,i)=>{ m += planMarkdown(p,i+1); });
+  }
+
+  m += `\n\n## 6. Claim spec\n\n| Field | Value |\n|---|---|\n`;
   m += [row('Claim initiation',or(val('claimInit'),'initiation')),
         row('Claim portal URL',or(val('claimUrl'),'portal URL')),
         row('Claim payer',or(val('claimPayer'),'payer')),
@@ -848,17 +971,6 @@ function markdown(){
         row('Max days to complete documents',or(val('claimDocDays'),'document limit'))].join('\n');
   const ar=val('autoReject').split('\n').filter(x=>x.trim());
   m += `\n\n**Auto-reject**\n\n`+(ar.length?ar.map(x=>`- ${x.trim()}`).join('\n'):`*UNANSWERED — auto-reject rules*`);
-
-  m += `\n\n## 6. Claim benefits & required documents\n\n`;
-  if(!b.length){ m += `*UNANSWERED — no benefits defined*`; }
-  else b.forEach((x,i)=>{
-    m += `\n### 6.${i+1} ${x.name||'(unnamed benefit)'}\n\n| Field | Value |\n|---|---|\n`;
-    m += [row('Group',x.group||'—'),row('Deductible',x.ded||'*empty*'),row('Multi claim',x.multi||'*empty*'),row('Max claim count',x.max||'*empty*')].join('\n');
-    const ds=(x.docs||[]).filter(d=>d.name);
-    m += `\n\n**Required documents**\n\n`+(ds.length
-      ? `| Document | Mandatory? | Notes |\n|---|---|---|\n`+ds.map(d=>`| ${d.name} | ${d.req||'*empty*'} | ${d.note||'—'} |`).join('\n')
-      : `*UNANSWERED — documents the claimant must upload for this benefit*`)+`\n`;
-  });
 
   m += `\n\n## 7. Notification\n\n**Order:** ${or(val('notifSeq'),'notification order')}\n\n| Event | Email | WhatsApp | SMS | Attachment |\n|---|---|---|---|---|\n`;
   m += n.length?n.map(x=>`| ${x.event||'—'} | ${x.email||'—'} | ${x.wa||'—'} | ${x.sms||'—'} | ${x.att||'—'} |`).join('\n'):'| *UNANSWERED* | | | | |';
@@ -914,88 +1026,107 @@ function copyLark(){
 }
 function savePdf(){buildPreview();window.print();}
 function saveJson(){
-  const data={meta:{partner:val('partnerName'),provider:val('provider'),package:val('packageName'),market:val('market'),locales:val('locales').split(',').map(x=>x.trim()).filter(Boolean),epic:val('jiraEpic')},
-    premium:{currency:val('premCurrency')||null,method:val('premMethod')||null,maxTSI:num('tsi'),
-      fixedAmount:num('premFixed'),
-      percentage:val('premMethod')==='Percentage of a base'?{rate:num('premRate'),base:val('premBase')==='Custom parameter'?val('premBaseCustom'):val('premBase'),floor:num('premFloor'),cap:num('premCap')}:null,
-      tiers:val('premMethod')==='Tiered'?{driver:val('premDriver'),ranges:tiers().map(x=>({label:x.label,from:x.from===''?null:+x.from,to:x.to===''?null:+x.to,tsi:x.tsi===''?null:+x.tsi,value:x.value===''?null:+x.value,valueType:x.vtype})),valid:validateTiers().ok}:null,
+  const data={
+    _schema:'brd-generator/2',
+    _form:formSnapshot(),
+    review:{preparedBy:val('preparedBy'),reviewedBy:val('reviewedBy'),status:val('docStatus'),version:val('docVersion'),exportedAt:new Date().toISOString()},
+    meta:{partner:val('partnerName'),provider:val('provider'),product:val('productName'),market:val('market'),locales:val('locales').split(',').map(x=>x.trim()).filter(Boolean),epic:val('jiraEpic')},
+    premium:{currency:val('premCurrency')||null,
       basis:val('premBasis')||null,grossNet:val('premGrossNet')||null,rounding:val('premRounding')||null,
       commissionPP:num('commPP'),commissionPartner:num('commPartner')},
     policy:{coverageDays:num('coverDays'),coverageStart:val('coverStart'),coverageEnd:val('coverEnd'),backdate:val('backdate'),
-      minAge:num('minAge'),maxAge:num('maxAge'),ageInclusive:val('ageIncl'),ageReferenceDate:val('ageRef'),
+      ageInclusive:val('ageIncl'),ageReferenceDate:val('ageRef'),
       uniquenessKey:val('uniqKey'),maxActivePolicies:num('maxActive'),
       uploadFields:val('uploadFields').split('\n').filter(x=>x.trim())},
     claim:{slaDays:num('claimSla'),maxInitiateDays:num('claimInitDays'),maxDocDays:num('claimDocDays'),
       autoReject:val('autoReject').split('\n').filter(x=>x.trim()),portalUrl:val('claimUrl')},
-    benefits:benefits(),notifications:notifs(),reports:reports(),
+    plans:plans().filter(p=>p.name).map(({el,...rest})=>rest),
+    crossPlanFlags:planDivergence(),
+    notifications:notifs(),reports:reports(),
     volume:{policiesPerMonth:num('volPolicy'),claimsPerMonth:num('volClaim'),gwpPerMonth:num('gwp')}};
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
-  a.download=`brd-${(val('partnerName')||'partner').toLowerCase().replace(/\s+/g,'-')}.json`;
+  a.download=`brd-${(val('partnerName')||'partner').toLowerCase().replace(/\s+/g,'-')}${val('docVersion')?'-'+val('docVersion').replace(/\s+/g,''):''}.json`;
   a.click();
-  toast('JSON saved. This is what feeds config & test-case generation.');
+  toast('JSON saved. Hand this file over — the PM reopens it with Load JSON.');
 }
 
-/* ---------- samples ---------- */
-const CALOSA={partnerName:'Calosa Computer',provider:'AUS (Asuransi Untuk Semua)',productName:'Moveable All Risk Mandatory',
- packageName:'3 Months 3 Mio Bundling',market:'Indonesia',locales:'id',targetRelease:'May 2026',jiraEpic:'',bizOwner:'Lasta Yuli Handono Putro',prodOwner:'Nabilla Atelya',
- volPolicy:'800',volClaim:'',gwp:'',reuse:'',
- pmBiz:'IT trading & laptop retailer',pmUser:'Customers buying a device in-store',pmOffer:'Mandatory / bundling',
- pmObject:'New devices: smartphone, tablet, laptop, desktop PC, all-in-one PC',pmRole:'Insurance broker',ojk:'Miscellaneous',ppCat:'Device',
- polApi:'SFTP',partnerApi:'No — use Partners Panel',polNum:'PasarPolis',
- premCurrency:'IDR',premMethod:'Fixed',premFixed:'18500',tsi:'3000000',premBasis:'Per policy',premGrossNet:'Gross — charged to the customer',premRounding:'No rounding',
- coverDays:'90',coverStart:'',coverEnd:'Date-to-date − 1 day, 23:59:59',backdate:'Yes — max 5 days',
- minAge:'',maxAge:'',ageIncl:'',ageRef:'',commPP:'10',commPartner:'20',cancel:'Yes — no refund',renew:'No',
- uniqKey:'IMEI / Serial Number',maxActive:'1',
- uploadFields:'Customer Name — required\nID/Passport/License/Tax No — required, alphanumeric, min 8 char\nEmail — required, email format\nPhone Number — required, prefix 62 or 08\nDevice Price — required, numeric, min 1,000,000 max 85,000,000\nDevice Brand — required\nDevice Model — required\nDevice Type — required, dropdown\nIMEI/SN — required, alphanumeric min 5 char\nInvoice Date — required, backdate max 5 days\nInvoice Number — required\nStore Name — required',
- claimInit:'Claim Portal, Poli Chat',claimUrl:'calosa.policies.ppibroker.co.id',claimPayer:'Provider directly',
- claimSla:'14',claimInitDays:'14',claimDocDays:'60',
- autoReject:'Claim filed > 14 calendar days after incident date\nDocuments sent > 60 calendar days after initiation\nIncident date < policy start date',
- notifSeq:'If email exists → send email. Else if phone exists → send WhatsApp.',reconDate:'Invoice date'};
-const CAL_BENEFITS=[
- {name:'Unexpected partial damage',group:'Accidental Damage',ded:'5% min 100k',multi:'Yes',max:'unlimited',
-  docs:[{name:'ID card (KTP / SIM / Passport)',req:'Mandatory',note:'clear photo, ID+EN'},{name:'Purchase invoice / receipt',req:'Mandatory',note:'original'},{name:'Photo of the damaged item',req:'Mandatory',note:'shows the damage'},{name:'Chronology statement',req:'Mandatory',note:'ID+EN'}]},
- {name:'Unexpected total damage',group:'Accidental Damage',ded:'5% min 150k',multi:'',max:'unlimited',
-  docs:[{name:'ID card (KTP / SIM / Passport)',req:'Mandatory',note:''},{name:'Purchase invoice / receipt',req:'Mandatory',note:'original'},{name:'Photo of the damaged item',req:'Mandatory',note:''},{name:'Repair estimate from service center',req:'Conditional',note:'if repairable'}]},
- {name:'Partial liquid damage',group:'Liquid Damage',ded:'5% min 100k',multi:'Yes',max:'unlimited',
-  docs:[{name:'ID card',req:'Mandatory',note:''},{name:'Photo of the damaged item',req:'Mandatory',note:''}]},
- {name:'Total liquid damage',group:'Liquid Damage',ded:'5% min 150k',multi:'No',max:'unlimited',
-  docs:[{name:'ID card',req:'Mandatory',note:''},{name:'Photo of the damaged item',req:'Mandatory',note:''}]},
- {name:'Partial — fire/lightning/disaster',group:'Fire & Natural Disaster',ded:'5% min 100k',multi:'No',max:'unlimited',
-  docs:[{name:'ID card',req:'Mandatory',note:''},{name:'Official report (fire dept / local authority)',req:'Mandatory',note:''}]},
- {name:'Total — fire/lightning/disaster',group:'Fire & Natural Disaster',ded:'5% min 150k',multi:'No',max:'1',
-  docs:[{name:'ID card',req:'Mandatory',note:''},{name:'Official report (fire dept / local authority)',req:'Mandatory',note:''}]},
- {name:'Loss due to theft/robbery',group:'Burglary & Theft',ded:'10% min 300k',multi:'No',max:'1',
-  docs:[{name:'ID card',req:'Mandatory',note:''},{name:'Police report',req:'Mandatory',note:'stating the theft'},{name:'Purchase invoice / receipt',req:'Mandatory',note:'original'},{name:'Chronology statement',req:'Mandatory',note:'ID+EN'}]}];
-const CAL_NOTIF=['Policy Creation','Claim Initiated','Document Received','Document Verified','Salvage Pending','Claim Accepted','Claim Rejected','Claim Paid']
- .map(e=>({event:e,email:'Yes',wa:'Yes',sms:'No',att:e==='Policy Creation'?'COI + Wording':'none'}));
-const CAL_REPORT=[
- {name:'Policy Creation Report',int:'Daily',time:'08:00',ch:'SFTP',to:'AUS'},
- {name:'Claim Settled & Rejected',int:'Weekly',time:'07:00',ch:'SFTP',to:'AUS'}];
-
-/* Amartha — percentage of loan */
-function loadSample(fields,benefitsArr,notifArr,reportArr,tierArr,msg){
+/* ---------- snapshot, import, autosave ---------- */
+const DRAFT_KEY='brd-generator-draft';
+function formSnapshot(){
+  const o={};
+  document.querySelectorAll('input[id],select[id],textarea[id]').forEach(el=>{
+    if(el.type==='file') return;
+    o[el.id]=el.value;
+  });
+  return o;
+}
+function snapshot(){
+  return {_schema:'brd-generator/2',_form:formSnapshot(),
+    plans:plans().map(({el,...rest})=>rest),
+    notifications:notifs(),reports:reports()};
+}
+function applySnapshot(o,msg){
+  if(!o||typeof o!=='object') throw new Error('not a BRD JSON file');
+  const f=o._form||{};
   clearAll(false);
-  $('benefitList').innerHTML='';
-  ['notifRows','reportRows','premTierRows'].forEach(id=>$(id).innerHTML='');
-  Object.entries(fields).forEach(([k,v])=>{if($(k))$(k).value=v;});
-  (benefitsArr||[]).forEach(benefitRow); (notifArr||[]).forEach(notifRow); (reportArr||[]).forEach(reportRow);
-  (tierArr&&tierArr.length?tierArr:[{}]).forEach(premTierRow);
-  $('reuseRefWrap').style.display='none';
-  showPremiumPanels(); refresh(); renderTierFlag(); runSimulation();
-  toast(msg);
+  Object.entries(f).forEach(([k,v])=>{const el=$(k); if(el&&el.type!=='file') el.value=v;});
+  $('planList').innerHTML='';
+  ['notifRows','reportRows'].forEach(id=>$(id).innerHTML='');
+  const ps=(o.plans&&o.plans.length)?o.plans:[{}];
+  ps.forEach(planRow);
+  const ns=(o.notifications&&o.notifications.length)?o.notifications:[{}];
+  ns.forEach(notifRow);
+  const rs=(o.reports&&o.reports.length)?o.reports:[{}];
+  rs.forEach(reportRow);
+  $('reuseRefWrap').style.display=(f.reuse||'').startsWith('Yes')?'block':'none';
+  refresh();
+  if(msg) toast(msg);
 }
-function loadSampleBRD(){loadSample(CALOSA,CAL_BENEFITS,CAL_NOTIF,CAL_REPORT,null,'Sample BRD loaded. Switch the premium method (Fixed / % of a base / Tiered) anytime — the right rail shows what is still unanswered.');}
+function importJson(file){
+  const fr=new FileReader();
+  fr.onload=()=>{
+    try{
+      const o=JSON.parse(fr.result);
+      if(!o._form && !o.plans) throw new Error('missing BRD data');
+      const v=(o.review&&o.review.version)?' '+o.review.version:'';
+      const st=(o.review&&o.review.status)?` · ${o.review.status}`:'';
+      applySnapshot(o,`Loaded${v}${st}. Revise, then download the updated JSON.`);
+    }catch(err){ toast('Could not read that file — is it a BRD JSON export?'); }
+  };
+  fr.onerror=()=>toast('Could not read that file.');
+  fr.readAsText(file);
+}
+let saveTimer=null;
+function autosave(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{
+    try{
+      localStorage.setItem(DRAFT_KEY,JSON.stringify(snapshot()));
+      const t=new Date();
+      $('autosave').textContent='saved '+String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
+    }catch(e){ $('autosave').textContent=''; }
+  },600);
+}
+function restoreDraft(){
+  try{
+    const raw=localStorage.getItem(DRAFT_KEY);
+    if(!raw) return false;
+    applySnapshot(JSON.parse(raw));
+    $('autosave').textContent='draft restored';
+    return true;
+  }catch(e){ return false; }
+}
+function clearDraft(){ try{ localStorage.removeItem(DRAFT_KEY); }catch(e){} }
 
 function clearAll(t=true){
   document.querySelectorAll('input,select,textarea').forEach(e=>e.value='');
-  $('benefitList').innerHTML='';
-  ['notifRows','reportRows','premTierRows'].forEach(id=>$(id).innerHTML='');
-  benefitRow(); notifRow(); reportRow(); premTierRow();
-  showPremiumPanels(); renderTierFlag();
-  if(t){refresh();runSimulation();toast('Cleared.');}
+  $('planList').innerHTML='';
+  ['notifRows','reportRows'].forEach(id=>$(id).innerHTML='');
+  planRow(); notifRow(); reportRow();
+  if(t){clearDraft();refresh();toast('Cleared.');}
 }
-function refresh(){runChecks();qaMatrix();showPremiumPanels();renderTierFlag();runSimulation();}
+function refresh(){numberPlans();showPlanPanels();runChecks();qaMatrix();renderTierFlag();renderDivergence();runSimulation();autosave();}
 
 /* ---------- wire ---------- */
 document.addEventListener('input',e=>{if(e.target.closest('main'))refresh();});
@@ -1003,22 +1134,20 @@ document.addEventListener('change',e=>{
   if(e.target.id==='reuse') $('reuseRefWrap').style.display = e.target.value.startsWith('Yes')?'block':'none';
   if(e.target.closest('main'))refresh();
 });
-$('addBenefit').onclick=()=>{benefitRow();refresh();};
+$('addPlan').onclick=()=>{planRow();refresh();};
 $('addNotif').onclick=()=>{notifRow();refresh();};
 $('addReport').onclick=()=>{reportRow();refresh();};
-$('addTier').onclick=()=>{premTierRow();refresh();};
-$('loadSample').onclick=loadSampleBRD;
 $('clearAll').onclick=()=>clearAll();
 $('toLark').onclick=copyLark; $('toLark2').onclick=copyLark;
 $('toPdf').onclick=savePdf; $('toPdf2').onclick=savePdf;
 $('toJson').onclick=saveJson;
+$('loadJson').onclick=()=>$('jsonFile').click();
+$('jsonFile').onchange=e=>{const f=e.target.files[0]; if(f) importJson(f); e.target.value='';};
 
-/* Fields the ambiguity ledger treats as required for READY TO BUILD.
-   Conditional premium fields (premFixed/premRate/premBase/premDriver) live inside
-   method-specific panels, so their * only shows when that method is selected. */
-const REQUIRED=['partnerName','provider','packageName','market','jiraEpic','volPolicy','volClaim','reuse',
- 'premCurrency','premMethod','tsi','premBasis','premGrossNet','premRounding',
- 'premFixed','premRate','premBase','premDriver',
+/* Partner-level fields the readiness checklist treats as required for READY TO BUILD.
+   Per-plan required fields carry their own * inside each plan block. */
+const REQUIRED=['partnerName','provider','productName','market','volPolicy','volClaim','reuse',
+ 'premCurrency','premBasis','premGrossNet','premRounding',
  'coverDays','coverStart','coverEnd','backdate','ageIncl','ageRef',
  'uniqKey','maxActive','uploadFields','claimSla','claimInitDays','claimDocDays','autoReject','reconDate'];
 function markRequired(){
@@ -1031,7 +1160,7 @@ function markRequired(){
   });
 }
 markRequired();
-loadSampleBRD();
+if(!restoreDraft()){ clearAll(false); refresh(); }
 </script>
 </body>
 </html>
